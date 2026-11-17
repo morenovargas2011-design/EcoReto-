@@ -1,0 +1,2562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#198754" />
+<title>EcoReto 3.0 — Clasificación Inteligente de Residuos</title>
+<style>
+  :root {
+    --green-dark: #146c43;
+    --green-main: #198754;
+    --green-light: #d1e7dd;
+    --green-bg: #eaf7ed;
+    --bin-white: #f8f9fa;
+    --bin-white-border: #adb5bd;
+    --bin-black: #212529;
+    --bin-green: #198754;
+    --gold: #ffc107;
+    --danger: #dc3545;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --card-shadow: 0 10px 25px rgba(20, 108, 67, 0.12);
+    --radius: 18px;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  input, textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  body {
+    background: linear-gradient(135deg, #eaf7ed 0%, #d4edda 100%);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    overflow-x: hidden;
+  }
+
+  .app-shell {
+    width: 100%;
+    max-width: 820px;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    border: 2px solid #c3e6cb;
+    position: relative;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(90deg, var(--green-dark), var(--green-main));
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    letter-spacing: 0.3px;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .pill-stat {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 5px 12px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* SCREENS */
+  .screen {
+    display: none;
+    padding: clamp(16px, 3vw, 28px);
+    animation: fadeIn 0.35s ease;
+  }
+
+  .screen.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ECOBOT MASCOT & EXPRESSIONS */
+  .ecobot-panel {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--green-bg);
+    border: 2px solid #b7e4c7;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .ecobot-stage {
+    width: 104px;
+    height: 104px;
+    border-radius: 22px;
+    background: radial-gradient(circle at 50% 45%, #ffffff 45%, #dcfce7 100%);
+    border: 3px solid var(--green-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 6px 14px rgba(25, 135, 84, 0.22);
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .ecobot-stage.small {
+    width: 82px;
+    height: 82px;
+    border-radius: 18px;
+  }
+
+  .ecobot-stage svg {
+    width: 94%;
+    height: 94%;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+  }
+
+  .ecobot-stage.mood-welcome,
+  .ecobot-stage.mood-tip {
+    animation: botIdle 3s ease-in-out infinite;
+  }
+
+  .ecobot-stage.mood-correct {
+    border-color: #20c997;
+    box-shadow: 0 0 18px rgba(32, 201, 151, 0.45);
+    animation: botBounce 0.55s ease infinite alternate;
+  }
+
+  .ecobot-stage.mood-streak {
+    border-color: #f59e0b;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    animation: botCool 0.7s ease-in-out infinite alternate;
+  }
+
+  .ecobot-stage.mood-error {
+    border-color: var(--danger);
+    box-shadow: 0 0 16px rgba(220, 53, 69, 0.35);
+    animation: botWobble 0.42s ease;
+  }
+
+  .ecobot-stage.mood-achievement,
+  .ecobot-stage.mood-gameover {
+    border-color: var(--gold);
+    box-shadow: 0 0 22px rgba(255, 193, 7, 0.6);
+    animation: botBounce 0.65s ease infinite alternate;
+  }
+
+  .ecobot-stage.talking svg {
+    animation: botTalk 0.26s ease-in-out infinite alternate;
+  }
+
+  @keyframes botIdle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  @keyframes botBounce {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-6px) scale(1.04); }
+  }
+
+  @keyframes botCool {
+    0% { transform: rotate(-2deg) scale(1.02); }
+    100% { transform: rotate(2deg) scale(1.05); }
+  }
+
+  @keyframes botWobble {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-7deg); }
+    75% { transform: rotate(7deg); }
+  }
+
+  @keyframes botTalk {
+    0% { transform: scaleY(1); }
+    100% { transform: scaleY(1.04) translateY(-2px); }
+  }
+
+  .speech-box {
+    flex: 1;
+  }
+
+  .speech-text {
+    font-size: clamp(0.95rem, 2vw, 1.05rem);
+    line-height: 1.45;
+    color: #14532d;
+    font-weight: 600;
+  }
+
+  .speech-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* BUTTONS */
+  .btn {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--green-main);
+    color: white;
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+  }
+  .btn-primary:hover { background: var(--green-dark); }
+
+  .btn-secondary {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+  .btn-secondary:hover { background: #cbd5e1; }
+
+  .btn-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+  }
+  .btn-warning:hover { background: #fde68a; }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+
+  /* HOME MENU & MODES */
+  .mode-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mode-card {
+    border: 2px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fafc;
+    text-align: left;
+  }
+
+  .mode-card.selected {
+    border-color: var(--green-main);
+    background: var(--green-bg);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.15);
+  }
+
+  .mode-card h4 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+    color: var(--green-dark);
+  }
+
+  .mode-card p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+  }
+
+  /* GAME AREA */
+  .game-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .progress-wrap {
+    flex: 1;
+    min-width: 180px;
+    background: #e2e8f0;
+    height: 12px;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #20c997, var(--green-main));
+    width: 0%;
+    transition: width 0.35s ease;
+  }
+
+  .badges-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .combo-badge {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: none;
+  }
+
+  .combo-badge.active {
+    display: inline-flex;
+    animation: pop 0.3s ease;
+  }
+
+  .timer-badge {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: none;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0.8); }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  /* WASTE CARD */
+  .stage-zone {
+    min-height: 185px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0 18px;
+    position: relative;
+  }
+
+  .waste-card {
+    background: #ffffff;
+    border: 3px solid var(--green-main);
+    border-radius: 20px;
+    padding: 18px 26px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    cursor: grab;
+    touch-action: none;
+    max-width: 320px;
+    width: 100%;
+    transition: box-shadow 0.15s ease;
+    position: relative;
+    z-index: 10;
+  }
+
+  .waste-card:active, .waste-card.dragging {
+    cursor: grabbing;
+    transform: scale(1.05);
+    box-shadow: 0 16px 32px rgba(25, 135, 84, 0.25);
+  }
+
+  .waste-emoji {
+    font-size: 3.4rem;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .waste-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+  }
+
+  .waste-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .drag-instruction {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* BINS GRID */
+  .bins-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .bin {
+    border-radius: 18px;
+    padding: 16px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+    border: 3px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 145px;
+    position: relative;
+  }
+
+  .bin:hover, .bin.drag-over {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+  }
+
+  .bin-white {
+    background: var(--bin-white);
+    color: #1e293b;
+    border-color: var(--bin-white-border);
+  }
+
+  .bin-black {
+    background: var(--bin-black);
+    color: #ffffff;
+    border-color: #495057;
+  }
+
+  .bin-green {
+    background: var(--bin-green);
+    color: #ffffff;
+    border-color: var(--green-dark);
+  }
+
+  .bin-icon {
+    font-size: 2.2rem;
+    margin-bottom: 6px;
+  }
+
+  .bin-title {
+    font-weight: 800;
+    font-size: 1rem;
+  }
+
+  .bin-sub {
+    font-size: 0.78rem;
+    opacity: 0.9;
+    margin-top: 3px;
+  }
+
+  .key-hint {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(128, 128, 128, 0.22);
+  }
+
+  /* MODO EXPERTO */
+  .expert-arena {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .expert-question-card {
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    border-left: 8px solid var(--green-main);
+    border-radius: 16px;
+    padding: 18px 20px;
+  }
+
+  .expert-badge-type {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #d1e7dd;
+    color: #0f5132;
+    margin-bottom: 8px;
+  }
+
+  .expert-q-text {
+    font-size: clamp(1.05rem, 2.2vw, 1.22rem);
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.4;
+  }
+
+  .expert-options-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .expert-opt-btn {
+    width: 100%;
+    text-align: left;
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 13px 16px;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.18s ease;
+  }
+
+  .expert-opt-btn:hover:not(:disabled) {
+    border-color: var(--green-main);
+    background: var(--green-bg);
+    transform: translateX(4px);
+  }
+
+  .expert-opt-btn:disabled {
+    cursor: default;
+  }
+
+  .expert-opt-btn.opt-correct {
+    border-color: var(--green-main);
+    background: #d1e7dd;
+    color: #0f5132;
+  }
+
+  .expert-opt-btn.opt-wrong {
+    border-color: var(--danger);
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  .opt-letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #1e293b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .expert-open-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .expert-input-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .expert-text-input {
+    flex: 1;
+    min-width: 220px;
+    padding: 13px 16px;
+    border: 2px solid #94a3b8;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .expert-text-input:focus {
+    border-color: var(--green-main);
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.15);
+  }
+
+  .expert-open-hint {
+    font-size: 0.88rem;
+    color: #166534;
+    font-weight: 600;
+    background: #e6f4ea;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border-left: 4px solid var(--green-main);
+  }
+
+  /* FEEDBACK BANNER */
+  .feedback {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: none;
+    line-height: 1.4;
+  }
+
+  .feedback.ok {
+    display: block;
+    background: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #badbcc;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .feedback.err {
+    display: block;
+    background: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+    animation: shake 0.35s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-7px); }
+    75% { transform: translateX(7px); }
+  }
+
+  /* LEARN MODULE */
+  .lesson-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .lesson-card {
+    border-radius: 16px;
+    padding: 18px;
+    border: 2px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .lesson-card.white-theme { border-top: 8px solid #94a3b8; }
+  .lesson-card.black-theme { border-top: 8px solid #1e293b; }
+  .lesson-card.green-theme { border-top: 8px solid #198754; }
+
+  .lesson-card h3 {
+    margin-bottom: 8px;
+    font-size: 1.15rem;
+  }
+
+  .lesson-list {
+    margin: 10px 0 12px 18px;
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.5;
+  }
+
+  .trap-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 0.84rem;
+    color: #92400e;
+    margin-top: 8px;
+    display: none;
+  }
+
+  .trap-box.open {
+    display: block;
+    animation: fadeIn 0.2s ease;
+  }
+
+  /* ACHIEVEMENTS MODULE */
+  .achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .achievement {
+    border: 2px solid var(--gold);
+    background: #fffdf5;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    transition: transform 0.2s;
+  }
+
+  .achievement.locked {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+    opacity: 0.62;
+    filter: grayscale(100%);
+  }
+
+  .ach-icon {
+    font-size: 2.4rem;
+    margin-bottom: 6px;
+  }
+
+  .ach-title {
+    font-weight: 800;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  .ach-desc {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+  }
+
+  /* RESULT SCREEN */
+  .result-box {
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  .result-score {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--green-main);
+    margin: 10px 0;
+  }
+
+  .result-stats {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0 24px;
+  }
+
+  @media (max-width: 560px) {
+    .bins-grid { gap: 8px; }
+    .bin { min-height: 125px; padding: 12px 6px; }
+    .bin-title { font-size: 0.88rem; }
+    .ecobot-panel { flex-direction: column; text-align: center; }
+    .speech-actions { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <header>
+    <div class="brand">🌱 EcoReto 3.0</div>
+    <div class="header-stats">
+      <div class="pill-stat" title="Récord histórico">🏆 Récord: <span id="hdr-best">0</span></div>
+      <div class="pill-stat" title="Logros desbloqueados">🎖️ <span id="hdr-ach">0/8</span></div>
+    </div>
+  </header>
+
+  <!-- PANTALLA DE INICIO -->
+  <section id="home" class="screen active">
+    <div class="ecobot-panel">
+      <div id="bot-home" class="ecobot-stage mood-welcome"></div>
+      <div class="speech-box">
+        <p id="home-speech" class="speech-text">
+          ¡Hola! Soy EcoBot ♻️🤖. Ayúdame a clasificar los residuos en las canecas Blanca, Negra y Verde según el código de colores. ¡Vamos!
+        </p>
+        <div class="speech-actions">
+          <button class="btn btn-secondary btn-sm" onclick="speakText(document.getElementById('home-speech').innerText)">🔊 Escuchar</button>
+          <button class="btn btn-secondary btn-sm" id="btn-music-toggle" onclick="toggleMusic()">🔇 Música: OFF</button>
+          <button class="btn btn-secondary btn-sm" id="btn-sound-toggle" onclick="toggleSound()">🔔 Efectos: ON</button>
+          <button class="btn btn-secondary btn-sm" onclick="showExtraTip()">💚 Consejo Extra</button>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom: 10px; font-size: 1.05rem;">1. Elige tu modalidad de juego:</h3>
+    <div class="mode-selector">
+      <div class="mode-card selected" data-mode="classic" onclick="selectMode('classic', this)">
+        <h4>🌿 Modo Clásico (10 retos)</h4>
+        <p>86 residuos posibles en rotación aleatoria para clasificar a tu propio ritmo.</p>
+      </div>
+      <div class="mode-card" data-mode="expert" onclick="selectMode('expert', this)">
+        <h4>🧠 Modo Experto (Desafío Real)</h4>
+        <p>50 preguntas de opción múltiple con trampa y preguntas abiertas ecológicas (10 al azar).</p>
+      </div>
+      <div class="mode-card" data-mode="blitz" onclick="selectMode('blitz', this)">
+        <h4>⏱️ Contrarreloj (60 segundos)</h4>
+        <p>Clasifica la mayor cantidad posible entre 86 residuos antes de que se agote el tiempo.</p>
+      </div>
+    </div>
+
+    <div class="home-grid">
+      <button class="btn btn-primary" onclick="startGame()">🎮 Jugar Ahora</button>
+      <button class="btn btn-secondary" onclick="showScreen('learn')">📚 Aprender</button>
+      <button class="btn btn-warning" onclick="showScreen('achievements')">🏆 Logros</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO -->
+  <section id="game" class="screen">
+    <div class="game-top-bar">
+      <button class="btn btn-secondary btn-sm" onclick="exitGame()">⬅ Salir</button>
+      <div class="progress-wrap">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+      <div class="badges-row">
+        <span id="timer-badge" class="timer-badge">⏱️ 60s</span>
+        <span id="combo-badge" class="combo-badge">🔥 Racha x2</span>
+        <span>Puntos: <strong id="game-score">0</strong></span>
+      </div>
+    </div>
+
+    <div class="ecobot-panel" style="padding: 10px 14px; margin-bottom: 12px;">
+      <div id="bot-game" class="ecobot-stage small mood-welcome"></div>
+      <div class="speech-box">
+        <p id="game-speech" class="speech-text" style="font-size: 0.92rem;">
+          Arrastra el residuo hacia la caneca correcta o haz clic/toca la caneca.
+        </p>
+      </div>
+    </div>
+
+    <!-- ARENA ESTÁNDAR (MODO CLÁSICO Y CONTRARRELOJ) -->
+    <div id="standard-arena">
+      <div class="stage-zone" id="stage-zone">
+        <div id="waste-card" class="waste-card" draggable="true">
+          <span id="waste-emoji" class="waste-emoji">🧴</span>
+          <div id="waste-name" class="waste-name">Botella plástica limpia</div>
+          <div id="waste-hint" class="waste-hint">Envase vacío y seco</div>
+        </div>
+        <div class="drag-instruction">💡 Arrastra la tarjeta a una caneca, tócala, o usa las teclas <strong>1</strong>, <strong>2</strong> y <strong>3</strong>.</div>
+      </div>
+
+      <div class="bins-grid">
+        <div class="bin bin-white" data-bin="white" onclick="handleAnswer('white')">
+          <span class="key-hint">1</span>
+          <div class="bin-icon">♻️</div>
+          <div class="bin-title">CANECA BLANCA</div>
+          <div class="bin-sub">Aprovechables limpios y secos</div>
+        </div>
+
+        <div class="bin bin-black" data-bin="black" onclick="handleAnswer('black')">
+          <span class="key-hint">2</span>
+          <div class="bin-icon">🗑️</div>
+          <div class="bin-title">CANECA NEGRA</div>
+          <div class="bin-sub">No aprovechables / Contaminados</div>
+        </div>
+
+        <div class="bin bin-green" data-bin="green" onclick="handleAnswer('green')">
+          <span class="key-hint">3</span>
+          <div class="bin-icon">🌱</div>
+          <div class="bin-title">CANECA VERDE</div>
+          <div class="bin-sub">Orgánicos aprovechables</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARENA MODO EXPERTO -->
+    <div id="expert-arena" class="expert-arena">
+      <div class="expert-question-card">
+        <span id="expert-badge-type" class="expert-badge-type">Selección Múltiple</span>
+        <div id="expert-q-text" class="expert-q-text">Pregunta experta</div>
+      </div>
+
+      <div id="expert-options-grid" class="expert-options-grid"></div>
+
+      <div id="expert-open-box" class="expert-open-box" style="display: none;">
+        <div class="expert-input-row">
+          <input type="text" id="expert-text-input" class="expert-text-input" placeholder="Escribe tu respuesta aquí..." autocomplete="off" />
+          <button class="btn btn-primary" id="expert-submit-btn" onclick="submitExpertOpenAnswer()">Responder ✓</button>
+        </div>
+        <div id="expert-open-hint" class="expert-open-hint">🌱 Cada pequeño esfuerzo cuenta para sanar nuestro planeta. ¡Piensa verde!</div>
+      </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+  </section>
+
+  <!-- PANTALLA DE APRENDIZAJE -->
+  <section id="learn" class="screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2>📚 Guía del Código de Colores</h2>
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('home')">⬅ Volver</button>
+    </div>
+
+    <div class="lesson-grid">
+      <div class="lesson-card white-theme">
+        <div>
+          <h3>⚪ Caneca Blanca: Aprovechables</h3>
+          <p style="font-size: 0.88rem; color: #475569;">Materiales que pueden transformarse en nuevos productos si están <strong>limpios y secos</strong>.</p>
+          <ul class="lesson-list">
+            <li>Botellas y envases plásticos limpios</li>
+            <li>Cartón, papel de cuaderno y periódico</li>
+            <li>Botellas y frascos de vidrio</li>
+            <li>Latas de aluminio y metales</li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="toggleTrap(this)">⚠️ Ver errores comunes</button>
+          <div class="trap-box">
+            <strong>¡Ojo!</strong> Si una caja de cartón tiene grasa de pizza o un vaso plástico tiene restos de yogur, pierde su valor de reciclaje y va en la <strong>Negra</strong>.
+          </div>
+        </div>
+      </div>
+
+      <div class="lesson-card black-theme">
+        <div>
+          <h3>⚫ Caneca Negra: No Aprovechables</h3>
+          <p style="font-size: 0.88rem; color: #475569;">Residuos que no se pueden reciclar ni compostar por higiene o composición.</p>
+          <ul class="lesson-list">
+            <li>Papel higiénico, servilletas y pañales</li>
+            <li>Cartón y papel contaminados con comida</li>
+            <li>Envolturas metalizadas de mecato</li>
+            <li>Icopor sucio, tapabocas y colillas</li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="toggleTrap(this)">⚠️ Ver errores comunes</button>
+          <div class="trap-box">
+            <strong>¡Ojo!</strong> Las servilletas usadas parecen papel, pero tienen fibras cortas y restos orgánicos/grasas; nunca van en la blanca ni en la verde.
+          </div>
+        </div>
+      </div>
+
+      <div class="lesson-card green-theme">
+        <div>
+          <h3>🟢 Caneca Verde: Orgánicos</h3>
+          <p style="font-size: 0.88rem; color: #475569;">Residuos biodegradables ideales para producir abono (compostaje).</p>
+          <ul class="lesson-list">
+            <li>Cáscaras de frutas y verduras</li>
+            <li>Restos de comida cruda o preparada</li>
+            <li>Desechos de poda, hojas secas y césped</li>
+            <li>Cáscaras de huevo y cuncho de café</li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="toggleTrap(this)">⚠️ Ver errores comunes</button>
+          <div class="trap-box">
+            <strong>¡Ojo!</strong> No mezcles bolsas plásticas dentro de la caneca verde, ya que contaminan el proceso de compostaje natural.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <button class="btn btn-primary" onclick="startGame()">🎮 ¡Poner a prueba lo aprendido!</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE LOGROS -->
+  <section id="achievements" class="screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2>🏆 Tus Logros Ecológicos</h2>
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('home')">⬅ Volver</button>
+    </div>
+
+    <div id="achievements-grid" class="achievements-grid"></div>
+
+    <div style="text-align: right; margin-top: 10px;">
+      <button class="btn btn-secondary btn-sm" onclick="resetProgress()">🔄 Reiniciar progreso guardado</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE RESULTADOS -->
+  <section id="result" class="screen">
+    <div class="result-box">
+      <div id="bot-result" class="ecobot-stage mood-gameover" style="width: 118px; height: 118px; margin: 0 auto 12px;"></div>
+      <h2 id="result-title">¡Excelente trabajo!</h2>
+      <div id="result-score" class="result-score">0 pts</div>
+      <p id="result-msg" style="color: #475569; max-width: 520px; margin: 0 auto; font-weight: 600;"></p>
+
+      <div class="result-stats">
+        <div class="pill-stat" style="background: #eaf7ed; color: #14532d;">✅ Aciertos: <span id="res-correct">0</span></div>
+        <div class="pill-stat" style="background: #fff3cd; color: #856404;">🔥 Mejor racha: <span id="res-streak">0</span></div>
+        <div class="pill-stat" style="background: #e0f2fe; color: #075985;">🎯 Precisión: <span id="res-acc">0%</span></div>
+        <div class="pill-stat" style="background: #f3e8ff; color: #6b21a8;">⏱️ Tiempo: <span id="res-time">0s</span></div>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="startGame()">🔄 Jugar de nuevo</button>
+        <button class="btn btn-warning" onclick="showScreen('achievements')">🏆 Ver Logros</button>
+        <button class="btn btn-secondary" onclick="showScreen('home')">🏠 Inicio</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  /* =========================================================================
+     MASCOTA ECOBOT SIN ORUGAS CON LAS 7 EXPRESIONES SELECCIONADAS
+     ========================================================================= */
+  function getEcoBotSVG(mood = "welcome") {
+    const isHappyEyes = (mood === "correct" || mood === "gameover" || mood === "achievement");
+    const isError = (mood === "error");
+    const isStreak = (mood === "streak");
+    const isTip = (mood === "tip");
+
+    const leftBrow = isError
+      ? "M 52 29 Q 68 25 86 19"
+      : isHappyEyes
+      ? "M 54 20 Q 72 8 88 18"
+      : "M 54 24 Q 72 14 88 22";
+
+    const rightBrow = isError
+      ? "M 114 19 Q 132 25 148 29"
+      : isHappyEyes
+      ? "M 112 18 Q 128 8 146 20"
+      : isTip
+      ? "M 114 25 Q 130 22 146 27"
+      : "M 112 22 Q 128 14 146 24";
+
+    const lidLift = isHappyEyes ? -3 : 0;
+
+    let eyesMarkup = "";
+    if (isStreak) {
+      eyesMarkup = `
+        <circle cx="76" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <circle cx="124" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <g>
+          <path d="M 48 36 L 94 36 L 91 56 C 89 62 82 64 72 64 L 62 64 C 53 64 49 58 48 50 Z" fill="#0f172a" stroke="#020617" stroke-width="3"/>
+          <path d="M 106 36 L 152 36 L 152 50 C 151 58 147 64 138 64 L 128 64 C 118 64 111 62 109 56 Z" fill="#0f172a" stroke="#020617" stroke-width="3"/>
+          <rect x="92" y="38" width="16" height="5" rx="2" fill="#0f172a"/>
+          <line x1="56" y1="42" x2="66" y2="56" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+          <line x1="63" y1="42" x2="71" y2="53" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+          <line x1="114" y1="42" x2="124" y2="56" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+          <line x1="121" y1="42" x2="129" y2="53" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+        </g>
+      `;
+    } else if (isHappyEyes) {
+      eyesMarkup = `
+        <circle cx="76" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <path d="M 64 49 Q 76 34 88 49" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <circle cx="124" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <path d="M 112 49 Q 124 34 136 49" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+      `;
+    } else if (isTip) {
+      eyesMarkup = `
+        <circle cx="76" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <circle cx="79" cy="47" r="8.5" fill="#0f172a"/>
+        <circle cx="76" cy="43" r="3.2" fill="#ffffff"/>
+        <circle cx="124" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <path d="M 113 44 L 132 48 L 113 52" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      `;
+    } else {
+      const py = isError ? 49 : 47;
+      eyesMarkup = `
+        <circle cx="76" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <circle cx="79" cy="${py}" r="8.5" fill="#0f172a"/>
+        <circle cx="76" cy="${py - 4}" r="3.2" fill="#ffffff"/>
+        <circle cx="124" cy="46" r="19" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+        <circle cx="121" cy="${py}" r="8.5" fill="#0f172a"/>
+        <circle cx="118" cy="${py - 4}" r="3.2" fill="#ffffff"/>
+      `;
+    }
+
+    let extrasMarkup = "";
+    if (mood === "correct") {
+      extrasMarkup = `
+        <line x1="26" y1="30" x2="38" y2="38" stroke="#facc15" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="38" y1="16" x2="45" y2="29" stroke="#facc15" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="174" y1="30" x2="162" y2="38" stroke="#facc15" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="162" y1="16" x2="155" y2="29" stroke="#facc15" stroke-width="4.5" stroke-linecap="round"/>
+      `;
+    } else if (mood === "error") {
+      extrasMarkup = `
+        <path d="M 28 18 C 38 14, 42 26, 30 28 C 20 30, 22 40, 34 39 C 43 38, 43 48, 31 49 C 22 50, 24 58, 33 58"
+              stroke="#0f172a" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      `;
+    } else if (mood === "achievement") {
+      extrasMarkup = `
+        <polygon points="28,22 31,29 38,29 32,34 34,41 28,37 22,41 24,34 18,29 25,29" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>
+        <polygon points="172,22 175,29 182,29 176,34 178,41 172,37 166,41 168,34 162,29 169,29" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>
+        <polygon points="22,74 24,79 30,79 25,83 27,88 22,85 17,88 19,83 14,79 20,79" fill="#fde047" stroke="#ca8a04" stroke-width="1.2"/>
+        <polygon points="178,74 180,79 186,79 181,83 183,88 178,85 173,88 175,83 170,79 176,79" fill="#fde047" stroke="#ca8a04" stroke-width="1.2"/>
+      `;
+    } else if (mood === "gameover") {
+      extrasMarkup = `
+        <line x1="28" y1="24" x2="39" y2="33" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
+        <line x1="168" y1="22" x2="158" y2="32" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
+        <g transform="translate(145, 92)">
+          <path d="M 6 12 C -2 12, -2 26, 8 26" stroke="#eab308" stroke-width="4" fill="none"/>
+          <path d="M 34 12 C 42 12, 42 26, 32 26" stroke="#eab308" stroke-width="4" fill="none"/>
+          <path d="M 6 8 L 34 8 L 30 28 C 29 34 11 34 10 28 Z" fill="#facc15" stroke="#854d0e" stroke-width="2.5"/>
+          <rect x="17" y="33" width="6" height="9" fill="#eab308" stroke="#854d0e" stroke-width="2"/>
+          <rect x="10" y="42" width="20" height="6" rx="2" fill="#ca8a04" stroke="#854d0e" stroke-width="2"/>
+          <circle cx="20" cy="19" r="5" fill="#fef08a"/>
+        </g>
+      `;
+    }
+
+    return `
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="EcoBot">
+        <ellipse cx="100" cy="183" rx="54" ry="8" fill="#cbd5e1" opacity="0.8"/>
+
+        <!-- Cuerpo de la caneca verde -->
+        <path d="M 48 96 L 152 96 L 140 168 C 139 175 133 179 126 179 L 74 179 C 67 179 61 175 60 168 Z"
+              fill="#16a34a" stroke="#0f172a" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M 122 96 L 152 96 L 140 168 C 139 175 133 179 126 179 L 114 179 Z"
+              fill="#15803d" opacity="0.5"/>
+
+        <!-- Símbolo de reciclaje blanco en el frente -->
+        <g transform="translate(100, 139) scale(0.82)" fill="#ffffff">
+          <path d="M -6 -26 L 8 -26 L 16 -12 L 22 -15 L 13 -2 L -2 -3 L 4 -6 L -2 -16 L -10 -16 Z"/>
+          <path d="M 22 4 L 15 17 L -1 17 L -1 24 L -12 12 L -1 0 L -1 7 L 10 7 L 14 0 Z"/>
+          <path d="M -18 8 L -25 -5 L -17 -18 L -23 -22 L -7 -21 L 0 -8 L -6 -11 L -12 -1 L -8 5 Z"/>
+        </g>
+
+        <!-- Interior de la boca abierta -->
+        <path d="M 44 86 Q 100 66 156 86 L 152 96 Q 100 105 48 96 Z"
+              fill="#0f172a" stroke="#0f172a" stroke-width="3"/>
+
+        <!-- Lengua rosada -->
+        ${isError
+          ? `<path d="M 75 94 Q 87 87 100 92 Q 113 87 125 94 Z" fill="#fb7185"/>`
+          : `<ellipse cx="100" cy="91" rx="23" ry="7" fill="#fb7185"/>`
+        }
+
+        <!-- Labio inferior -->
+        <rect x="40" y="88" width="120" height="10" rx="5" fill="#22c55e" stroke="#0f172a" stroke-width="3.5"/>
+
+        <!-- Tapa superior + Ojos -->
+        <g transform="translate(0, ${lidLift})">
+          <path d="M 40 74 Q 100 54 160 74 L 162 82 Q 100 66 38 82 Z"
+                fill="#22c55e" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+          <path d="M 49 67 Q 100 50 151 67 L 155 74 Q 100 56 45 74 Z"
+                fill="#16a34a" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+
+          <!-- Cejas -->
+          <path d="${leftBrow}" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+          <path d="${rightBrow}" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+
+          <!-- Ojos -->
+          ${eyesMarkup}
+        </g>
+
+        ${extrasMarkup}
+      </svg>
+    `;
+  }
+
+  const ALL_MOODS = ["mood-welcome", "mood-correct", "mood-error", "mood-streak", "mood-gameover", "mood-achievement", "mood-tip"];
+
+  function setBotExpression(targetId, mood = "welcome") {
+    const stage = document.getElementById(targetId);
+    if (!stage) return;
+    stage.classList.remove(...ALL_MOODS);
+    stage.classList.add(`mood-${mood}`);
+    stage.innerHTML = getEcoBotSVG(mood);
+  }
+
+  function renderAllBots(mood = "welcome") {
+    ["bot-home", "bot-game", "bot-result"].forEach(id => setBotExpression(id, mood));
+  }
+
+  /* =========================================================================
+     34 CONSEJOS EXTRA DE ECOBOT
+     ========================================================================= */
+  const ECO_TIPS = [
+    "¡Recuerda! Reduce, Reutiliza y Recicla por un planeta más verde 💚.",
+    "Aplasta las botellas plásticas antes de ponerlas en la caneca Blanca para ahorrar espacio 🧴.",
+    "Si una caja de pizza tiene grasa, corta la tapa limpia para la Blanca y lleva la base sucia a la Negra 🍕.",
+    "El cuncho de café y las cáscaras de huevo son oro puro para el abono en la caneca Verde 🌱.",
+    "¡Nunca viertas aceite de cocina usado por el lavaplatos! Una sola gota contamina hasta 1.000 litros de agua 💧.",
+    "Lleva siempre tu propia bolsa reutilizable al mercado y evita cientos de bolsas plásticas al año 🛍️.",
+    "El vidrio puede reciclarse infinitas veces sin perder ni un poquito de su calidad ni pureza 🫙.",
+    "Enjuaga rápidamente los envases de yogur o leche antes de llevarlos a la caneca Blanca para evitar malos olores 🥛.",
+    "Las pilas y baterías usadas contienen metales pesados; llévalas siempre a puntos de recolección posconsumo 🔋.",
+    "Desconecta los cargadores cuando no estén en uso: el consumo fantasma también deja huella de carbono ⚡.",
+    "Usa un termo reutilizable para tu agua o café; evitarás decenas de vasos desechables cada mes ☕.",
+    "Antes de imprimir un documento, pregúntate: ¿realmente necesito tenerlo en papel? 📄.",
+    "Los medicamentos vencidos o parcialmente consumidos deben depositarse en los Puntos Azules de las droguerías 💊.",
+    "Una lata de aluminio reciclada ahorra hasta el 95% de la energía necesaria para fabricar una nueva 🥫.",
+    "Si se rompe un vaso o espejo, envuélvelo bien en cartón grueso antes de ponerlo en la caneca Negra para proteger a los recicladores 🧤.",
+    "Aprovecha las hojas impresas por una sola cara como cuaderno de notas o borradores en casa 📓.",
+    "Las cajas de Tetra Pak (jugos y leche) van en la caneca Blanca: escúrrelas, aplástalas y déjalas secar 🧃.",
+    "Compostar en casa puede reducir hasta en un 50% el volumen de basura que sale de tu cocina 🌿.",
+    "Cierra la llave mientras te cepillas los dientes o enjabonas los platos: ahorrarás hasta 12 litros por minuto 🚰.",
+    "Prefiere frutas y verduras frescas sin bandejas de icopor ni envolturas plásticas innecesarias 🍎.",
+    "Los aparatos electrónicos dañados (celulares, cables, audífonos) son residuos RAEE y tienen puntos especiales de entrega 📱.",
+    "Dona la ropa, libros o juguetes que ya no uses en buen estado: reutilizar es la forma más noble de cuidar el planeta 👕.",
+    "El papel aluminio limpio y sin restos de comida puede hacerse una bolita y depositarse en la caneca Blanca ✨.",
+    "No arrugues el papel que vas a reciclar: apilarlo liso facilita su transporte y aprovechamiento en planta 📚.",
+    "Las tapas plásticas de las botellas pueden donarse a fundaciones sociales o ir junto con la botella en la Blanca 🧢.",
+    "Plantar un árbol nativo ayuda a capturar CO₂, regular la temperatura y dar hogar a aves e insectos 🌳.",
+    "Revisa la presión de las llantas de la bicicleta o el carro: un buen inflado ahorra energía y reduce emisiones 🚲.",
+    "Los cepillos de dientes de bambú son una gran alternativa ecológica frente a los de plástico convencional 🪥.",
+    "Separar bien en la fuente dignifica y facilita la labor diaria de miles de recicladores de oficio 🙌.",
+    "Compra productos a granel usando tus propios frascos de vidrio: eliminas empaques innecesarios desde el primer momento 🌾.",
+    "Aprovecha la luz natural durante el día abriendo cortinas y persianas; tu vista y el planeta te lo agradecerán ☀️.",
+    "Si tienes mascotas, recoge sus desechos con bolsas biodegradables y deposítalos siempre en la caneca Negra 🐕.",
+    "Los neumáticos usados, colchones y muebles viejos tienen rutas especiales de recolección voluminosa en tu municipio 🛋️.",
+    "Comparte lo que sabes sobre el código de colores con tu familia y vecinos: ¡el cambio ambiental es contagioso! 🌎"
+  ];
+
+  const ECO_MOTIVATIONAL_PHRASES = [
+    "🌱 Cada pequeño esfuerzo cuenta para sanar nuestro planeta. ¡Piensa verde!",
+    "🌍 Cuidar la naturaleza es cuidar nuestro propio hogar. ¡Tú puedes!",
+    "♻️ Un residuo bien clasificado es una nueva oportunidad para la vida.",
+    "💧 El agua y la tierra agradecen tu compromiso ambiental de hoy.",
+    "☀️ El futuro de las próximas generaciones se construye con hábitos sostenibles."
+  ];
+
+  let tipQueue = [];
+
+  function showExtraTip() {
+    if (tipQueue.length === 0) {
+      tipQueue = shuffle(ECO_TIPS);
+    }
+    const nextTip = tipQueue.pop();
+    setBotExpression("bot-home", "tip");
+    document.getElementById("home-speech").textContent = nextTip;
+  }
+
+  /* =========================================================================
+     BANCO GIGANTE DE RESIDUOS (MODO CLÁSICO Y CONTRARRELOJ) - 86 RESIDUOS
+     ========================================================================= */
+  const WASTE_DB = [
+    // ================= CANECA BLANCA (29 residuos aprovechables limpios y secos) =================
+    { name: "Botella plástica de agua", hint: "Vacía, limpia y aplastada", emoji: "🧴", bin: "white",
+      why: "Los envases plásticos limpios y secos van en la caneca Blanca para ser reciclados." },
+    { name: "Cuaderno viejo sin espiral", hint: "Hojas de papel limpias y secas", emoji: "📓", bin: "white",
+      why: "El papel limpio es 100% aprovechable y debe depositarse en la caneca Blanca." },
+    { name: "Lata de refresco", hint: "Aluminio limpio y vacío", emoji: "🥫", bin: "white",
+      why: "El aluminio puede reciclarse infinitas veces si se deposita limpio en la Blanca." },
+    { name: "Frasco de vidrio de mermelada", hint: "Enjuagado y sin restos", emoji: "🫙", bin: "white",
+      why: "El vidrio limpio va en la caneca Blanca para transformarse en nuevos envases." },
+    { name: "Caja de cartón de zapatos", hint: "Seca y libre de grasa", emoji: "📦", bin: "white",
+      why: "El cartón limpio y seco es un material altamente reciclable de la caneca Blanca." },
+    { name: "Envase de champú vacío", hint: "Plástico enjuagado y seco", emoji: "🧼", bin: "white",
+      why: "Los envases plásticos de aseo limpios van en la caneca Blanca." },
+    { name: "Revista vieja de papel couché", hint: "Papel brillante limpio", emoji: "📰", bin: "white",
+      why: "Las revistas y periódicos limpios y secos van en la caneca Blanca para su aprovechamiento." },
+    { name: "Caja de leche Tetra Pak", hint: "Escurrida, limpia y aplastada", emoji: "🧃", bin: "white",
+      why: "Los envases Tetra Pak vacíos y limpios se reciclan en la caneca Blanca." },
+    { name: "Tubo de cartón del papel higiénico", hint: "Cilindro de cartón seco", emoji: "🧻", bin: "white",
+      why: "A diferencia del papel higiénico usado, el tubo interior de cartón limpio va en la Blanca." },
+    { name: "Tarro metálico de galletas", hint: "Hojalata limpia y vacía", emoji: "🍪", bin: "white",
+      why: "Los envases metálicos limpios son 100% reciclables en la caneca Blanca." },
+    { name: "Botella de vidrio de salsa", hint: "Enjuagada y sin etiqueta sucia", emoji: "🍾", bin: "white",
+      why: "Las botellas de vidrio limpias van en la caneca Blanca para su fundición y rehúso." },
+    { name: "Carpeta de cartulina limpia", hint: "Sin ganchos plásticos ni manchas", emoji: "📁", bin: "white",
+      why: "La cartulina limpia y seca es fibra aprovechable que pertenece a la caneca Blanca." },
+    { name: "Garrafa plástica de detergente", hint: "Enjuagada y sin líquido", emoji: "🧺", bin: "white",
+      why: "Los envases plásticos rígidos (HDPE) limpios son muy valiosos en la caneca Blanca." },
+    { name: "Caja de cereal de cartón", hint: "Sin la bolsa interior y seca", emoji: "🥣", bin: "white",
+      why: "El cartón plegadizo limpio y seco se recicla en la caneca Blanca." },
+    { name: "Lata de atún lavada", hint: "Sin aceite ni restos de pescado", emoji: "🐟", bin: "white",
+      why: "Las latas de conserva bien enjuagadas van en la caneca Blanca." },
+    { name: "Sobre de carta de papel", hint: "Papel blanco o kraft limpio", emoji: "✉️", bin: "white",
+      why: "Los sobres de papel limpios y secos van en la caneca Blanca." },
+    { name: "Botella plástica de yogur lavada", hint: "Enjuagada y escurrida", emoji: "🥛", bin: "white",
+      why: "Al retirar los restos lácteos y secarla, la botella vuelve a ser reciclable en la Blanca." },
+    { name: "Periódico leído del domingo", hint: "Hojas secas sin humedad", emoji: "🗞️", bin: "white",
+      why: "El papel periódico limpio es una de las fibras más fáciles de reciclar en la Blanca." },
+    { name: "Frasco de vidrio de café soluble", hint: "Vacío y sin humedad", emoji: "🫙", bin: "white",
+      why: "El vidrio transparente limpio va directamente a la caneca Blanca." },
+    { name: "Caja de cartón de medicamentos", hint: "Solo la caja externa vacía", emoji: "💊", bin: "white",
+      why: "La caja plegadiza de cartón va en la Blanca (los blísteres con pastillas van en Punto Azul)." },
+    { name: "Botella de vidrio de jugo natural", hint: "Limpia y sin tapa oxidada", emoji: "🍹", bin: "white",
+      why: "Los envases de vidrio limpios se depositan en la caneca Blanca." },
+    { name: "Bolsa plástica transparente limpia", hint: "Seca y libre de comida o grasa", emoji: "🛍️", bin: "white",
+      why: "Las bolsas plásticas limpias y secas pueden reciclarse en la caneca Blanca." },
+    { name: "Cubeta de huevos de cartón limpia", hint: "Seca y sin restos de huevo", emoji: "🥚", bin: "white",
+      why: "La pulpa moldeada de cartón limpia y seca va en la caneca Blanca." },
+    { name: "Hojas impresas de oficina", hint: "Papel bond limpio y seco", emoji: "📄", bin: "white",
+      why: "El papel de archivo limpio se aprovecha en la caneca Blanca." },
+    { name: "Envase plástico de crema corporal", hint: "Vacío y limpio por dentro", emoji: "🧴", bin: "white",
+      why: "Los envases plásticos cosméticos limpios van en la caneca Blanca." },
+    { name: "Caja de envíos de comercio electrónico", hint: "Cartón corrugado seco sin cinta excesiva", emoji: "📦", bin: "white",
+      why: "El cartón corrugado limpio es un material estrella de la caneca Blanca." },
+    { name: "Lata de maíz dulce lavada", hint: "Hojalata limpia y sin líquido", emoji: "🌽", bin: "white",
+      why: "Los metales ferrosos y de aluminio limpios se reciclan en la caneca Blanca." },
+    { name: "Tapa plástica de refresco", hint: "Polipropileno limpio y seco", emoji: "🧢", bin: "white",
+      why: "Las tapas plásticas limpias van en la caneca Blanca o en campañas solidarias." },
+    { name: "Folleto publicitario de papel", hint: "Papel limpio y sin plastificar grueso", emoji: "📑", bin: "white",
+      why: "Los volantes de papel limpios van en la caneca Blanca." },
+
+    // ================= CANECA NEGRA (29 residuos no aprovechables / contaminados) =================
+    { name: "Servilleta usada con comida", hint: "Papel absorbente sucio", emoji: "🧻", bin: "black",
+      why: "Las servilletas usadas contienen grasa y fluidos que impiden su reciclaje; van en la Negra." },
+    { name: "Envoltura de papas fritas", hint: "Paquete metalizado por dentro", emoji: "🛍️", bin: "black",
+      why: "Las envolturas de mecato combinan plástico y aluminio difíciles de separar; van en la Negra." },
+    { name: "Papel higiénico usado", hint: "Residuo sanitario", emoji: "🚽", bin: "black",
+      why: "Por higiene y salud pública, los residuos sanitarios siempre van en la caneca Negra." },
+    { name: "Caja de pizza engrasada", hint: "Cartón manchado de aceite y queso", emoji: "🍕", bin: "black",
+      why: "Aunque es cartón, la grasa contamina la pulpa del papel. Va en la Negra." },
+    { name: "Vaso de icopor con restos de jugo", hint: "Poliestireno expandido sucio", emoji: "🥤", bin: "black",
+      why: "El icopor contaminado con alimentos no es aprovechable y debe ir en la caneca Negra." },
+    { name: "Tapabocas desechable", hint: "Elemento de protección usado", emoji: "😷", bin: "black",
+      why: "Los tapabocas usados son residuos no aprovechables y van en la caneca Negra." },
+    { name: "Pañal desechable usado", hint: "Residuo sanitario de uso personal", emoji: "👶", bin: "black",
+      why: "Por razones sanitarias e higiénicas, los pañales van en la caneca Negra." },
+    { name: "Copitos de algodón (hisopos) usados", hint: "Residuo de higiene personal", emoji: "👂", bin: "black",
+      why: "Los hisopos usados son residuos sanitarios no aprovechables y van en la Negra." },
+    { name: "Colilla de cigarrillo apagada", hint: "Filtro con residuos tóxicos", emoji: "🚬", bin: "black",
+      why: "Las colillas contienen filtros sintéticos y sustancias no reciclables; van en la Negra." },
+    { name: "Recibo de compra en papel térmico", hint: "Tirilla de datáfono o supermercado", emoji: "🧾", bin: "black",
+      why: "El papel térmico tiene recubrimientos químicos (BPA) que impiden reciclarlo; va en la Negra." },
+    { name: "Esponja de cocina desgastada", hint: "Fibra sintética usada", emoji: "🧽", bin: "black",
+      why: "Las esponjas de lavar platos usadas acumulan grasa y bacterias y no son reciclables; van en la Negra." },
+    { name: "Bolsa plástica untada de aceite", hint: "Plástico contaminado con alimentos", emoji: "🥩", bin: "black",
+      why: "El plástico sucio con grasas o sangre de alimentos pierde su valor reciclable y va en la Negra." },
+    { name: "Pañitos húmedos usados", hint: "Toallitas con fibras sintéticas", emoji: "🧻", bin: "black",
+      why: "Los pañitos húmedos contienen plásticos no biodegradables y van en la caneca Negra." },
+    { name: "Bandeja de icopor con grasa de carne", hint: "Poliestireno contaminado", emoji: "🍗", bin: "black",
+      why: "Las bandejas de icopor sucias de alimentos van en la caneca Negra." },
+    { name: "Chicle masticado envuelto en papel", hint: "Goma sintética usada", emoji: "🍬", bin: "black",
+      why: "La goma de mascar es un polímero no reciclable ni compostable; va en la Negra." },
+    { name: "Cepillo de dientes plástico viejo", hint: "Mezcla de plásticos y cerdas de nailon", emoji: "🪥", bin: "black",
+      why: "Los cepillos de dientes convencionales usados van en la caneca Negra." },
+    { name: "Papel carbón o papel mantequilla usado", hint: "Papel con ceras o tintas especiales", emoji: "📜", bin: "black",
+      why: "Los papeles encerados o con carbón no pueden procesarse en plantas de papel; van en la Negra." },
+    { name: "Vaso de café de cartón plastificado sucio", hint: "Con recubrimiento interno y restos", emoji: "☕", bin: "black",
+      why: "Los vasos desechables sucios con café y recubrimiento plástico van en la Negra." },
+    { name: "Polvo y pelusa de barrer la casa", hint: "Residuo de barrido doméstico", emoji: "🧹", bin: "black",
+      why: "El polvo del barrido contiene microplásticos y suciedad variada; va en la caneca Negra." },
+    { name: "Envoltura de chocolatina o galletas", hint: "Plástico laminado con restos", emoji: "🍫", bin: "black",
+      why: "Los empaques multicapa de golosinas van en la caneca Negra." },
+    { name: "Curitas y gasas usadas", hint: "Residuo sanitario doméstico", emoji: "🩹", bin: "black",
+      why: "Los materiales de curación usados son residuos sanitarios de la caneca Negra." },
+    { name: "Espejo roto envuelto en cartón", hint: "Vidrio con recubrimiento metálico", emoji: "🪞", bin: "black",
+      why: "Los espejos no se reciclan con el vidrio de botellas; van bien protegidos en la Negra." },
+    { name: "Pitillo (pajilla) plástico usado", hint: "Plástico delgado contaminado", emoji: "🥤", bin: "black",
+      why: "Los pitillos usados suelen ser demasiado pequeños y contaminados; van en la Negra." },
+    { name: "Taza de cerámica rota", hint: "Loza o porcelana fracturada", emoji: "🏺", bin: "black",
+      why: "La cerámica tiene un punto de fusión distinto al vidrio y contamina el horno; va en la Negra." },
+    { name: "Papel aluminio arrugado con grasa", hint: "Con restos de comida horneada", emoji: "箔", bin: "black",
+      why: "Cuando el aluminio tiene restos de alimentos y grasa, no es aprovechable y va en la Negra." },
+    { name: "Cuchilla de afeitar desechable usada", hint: "Plástico y metal contaminado", emoji: "🪒", bin: "black",
+      why: "Por higiene y seguridad, las máquinas de afeitar usadas van protegidas en la Negra." },
+    { name: "Arena sanitaria usada de gato", hint: "Residuo sanitario de mascota", emoji: "🐈", bin: "black",
+      why: "Los desechos de mascotas y su arena sanitaria siempre van en la caneca Negra." },
+    { name: "Bolsa de papas fritas metalizada", hint: "Empaque flexográfico multicapa", emoji: "🍟", bin: "black",
+      why: "Este tipo de empaques metalizados no son reciclables y van en la caneca Negra." },
+    { name: "Globo de látex reventado", hint: "Caucho sintético usado", emoji: "🎈", bin: "black",
+      why: "Los globos usados no se reciclan ni se compostan rápido; van en la caneca Negra." },
+
+    // ================= CANECA VERDE (28 residuos orgánicos aprovechables) =================
+    { name: "Cáscara de banano", hint: "Resto de fruta fresca", emoji: "🍌", bin: "green",
+      why: "Las cáscaras de frutas son materia orgánica ideal para compostaje en la caneca Verde." },
+    { name: "Cáscaras de huevo trituradas", hint: "Residuo orgánico de cocina", emoji: "🥚", bin: "green",
+      why: "Las cáscaras de huevo aportan calcio al abono orgánico y van en la caneca Verde." },
+    { name: "Sobras de arroz y verduras", hint: "Restos de alimentos", emoji: "🥗", bin: "green",
+      why: "Los restos de comida se descomponen naturalmente y pertenecen a la caneca Verde." },
+    { name: "Hojas secas y ramas de jardín", hint: "Residuo de poda vegetal", emoji: "🍂", bin: "green",
+      why: "Los restos vegetales de poda van en la caneca Verde para producir compost." },
+    { name: "Cuncho (borra) de café", hint: "Residuo natural del café colado", emoji: "☕", bin: "green",
+      why: "El cuncho de café es un excelente fertilizante natural y va en la caneca Verde." },
+    { name: "Corazón de manzana", hint: "Resto de fruta orgánica", emoji: "🍎", bin: "green",
+      why: "Los restos de frutas son 100% biodegradables y van en la caneca Verde." },
+    { name: "Restos de cáscaras de naranja", hint: "Residuo cítrico orgánico", emoji: "🍊", bin: "green",
+      why: "Los residuos orgánicos de frutas frescas se transforman en abono en la caneca Verde." },
+    { name: "Cáscaras de papa cruda", hint: "Peladuras de tubérculos frescos", emoji: "🥔", bin: "green",
+      why: "Las peladuras de verduras y tubérculos se compostan fácilmente en la caneca Verde." },
+    { name: "Flores marchitas de florero", hint: "Tallos y pétalos naturales", emoji: "🥀", bin: "green",
+      why: "Las flores naturales marchitas son materia vegetal biodegradable de la caneca Verde." },
+    { name: "Semilla y cáscara de aguacate", hint: "Residuo orgánico vegetal", emoji: "🥑", bin: "green",
+      why: "Las cáscaras y pepas de frutas son 100% orgánicas y van en la caneca Verde." },
+    { name: "Restos de pan o arepa", hint: "Alimento sin envoltura plástica", emoji: "🍞", bin: "green",
+      why: "Los restos de alimentos sin empaques van en la caneca Verde para aprovechamiento orgánico." },
+    { name: "Bolsita de aromática natural", hint: "Hierbas usadas sin grapa metálica", emoji: "🍵", bin: "green",
+      why: "Las hierbas de infusión y bolsitas de celulosa natural se descomponen en la caneca Verde." },
+    { name: "Cáscara de sandía o melón", hint: "Corteza de fruta fresca", emoji: "🍉", bin: "green",
+      why: "Las cortezas de frutas aportan humedad y nutrientes en la caneca Verde." },
+    { name: "Tallos de cilantro y perejil", hint: "Recortes de hierbas de cocina", emoji: "🌿", bin: "green",
+      why: "Los recortes frescos de hierbas aromáticas van en la caneca Verde." },
+    { name: "Cáscaras de zanahoria y pepino", hint: "Peladuras de hortalizas", emoji: "🥕", bin: "green",
+      why: "Las peladuras de verduras crudas son ideales para compostaje en la caneca Verde." },
+    { name: "Césped recién cortado", hint: "Recorte de prado natural", emoji: "🌱", bin: "green",
+      why: "El pasto cortado aporta nitrógeno al compostaje de la caneca Verde." },
+    { name: "Cáscara de piña", hint: "Corona y piel de fruta", emoji: "🍍", bin: "green",
+      why: "Los residuos vegetales de frutas tropicales van en la caneca Verde." },
+    { name: "Restos de pasta cocida sin empaque", hint: "Alimento biodegradable", emoji: "🍝", bin: "green",
+      why: "Los sobrantes de comida preparada sin plásticos pertenecen a la caneca Verde." },
+    { name: "Cáscaras de cebolla y ajo", hint: "Pieles secas de vegetales", emoji: "🧅", bin: "green",
+      why: "Las capas externas de cebolla y ajo son 100% biodegradables en la caneca Verde." },
+    { name: "Tusa (mazorca) de maíz desgranada", hint: "Residuo agrícola orgánico", emoji: "🌽", bin: "green",
+      why: "La tusa del maíz es fibra vegetal compostable de la caneca Verde." },
+    { name: "Cáscara de mango y semilla", hint: "Resto de fruta madura", emoji: "🥭", bin: "green",
+      why: "Las frutas y sus semillas se reincorporan al suelo mediante la caneca Verde." },
+    { name: "Hojas externas de lechuga y repollo", hint: "Hojas vegetales de cocina", emoji: "🥬", bin: "green",
+      why: "Las hojas de verduras se descomponen rápidamente en la caneca Verde." },
+    { name: "Cáscaras de mandarina", hint: "Piel de fruta cítrica", emoji: "🍊", bin: "green",
+      why: "Los restos de cítricos van en la caneca Verde para producir abono orgánico." },
+    { name: "Aserrín de madera natural sin barniz", hint: "Viruta de madera pura", emoji: "🪵", bin: "green",
+      why: "El aserrín de madera natural sin químicos equilibra el carbono en la caneca Verde." },
+    { name: "Cáscaras de plátano verde o maduro", hint: "Residuo vegetal de cocina", emoji: "🍌", bin: "green",
+      why: "Las cáscaras de plátano son ricas en potasio y van en la caneca Verde." },
+    { name: "Restos de frijoles o lentejas cocidas", hint: "Legumbres sobrantes", emoji: "🫘", bin: "green",
+      why: "Los restos de granos y comida van en la caneca Verde." },
+    { name: "Cáscaras de limón exprimido", hint: "Resto vegetal de cocina", emoji: "🍋", bin: "green",
+      why: "Los limones exprimidos son materia orgánica biodegradable de la caneca Verde." },
+    { name: "Restos de poda de setos y arbustos", hint: "Ramitas y hojas verdes", emoji: "🌳", bin: "green",
+      why: "Los desechos de jardinería van en la caneca Verde para aprovechamiento orgánico." }
+  ];
+
+  /* =========================================================================
+     BANCO GIGANTE DEL MODO EXPERTO - 50 PREGUNTAS
+     ========================================================================= */
+  const EXPERT_DB = [
+    {
+      type: "mc",
+      question: "Tienes una caja de pizza con la mitad de la tapa limpia y la base totalmente impregnada de aceite y queso. ¿Cuál es el manejo correcto?",
+      options: [
+        { text: "Separar la tapa limpia para la caneca Blanca y depositar la base engrasada en la Negra.", correct: true },
+        { text: "Depositar toda la caja completa en la caneca Blanca porque el cartón es 100% biodegradable.", correct: false },
+        { text: "Depositar toda la caja en la caneca Verde para que el aceite acelere el compostaje.", correct: false },
+        { text: "Lavar la caja con jabón antes de llevarla a la caneca Verde.", correct: false }
+      ],
+      explanation: "La fibra de cartón limpia sí es reciclable (Blanca), pero el cartón con grasa arruina el lote de reciclaje y debe ir a la Negra."
+    },
+    {
+      type: "mc",
+      question: "¿Por qué las servilletas de papel usadas NO deben depositarse en la caneca Blanca ni en la Verde?",
+      options: [
+        { text: "Porque tienen fibras muy cortas y residuos de grasa/fluidos que impiden reciclarlas y contaminan el compost.", correct: true },
+        { text: "Porque están fabricadas con microplásticos sintéticos que tardan 500 años en degradarse.", correct: false },
+        { text: "Porque requieren un contenedor exclusivo de color rojo por ser residuos hospitalarios.", correct: false },
+        { text: "Sí deben ir en la caneca Blanca siempre que se doblen y se sequen al sol.", correct: false }
+      ],
+      explanation: "El papel absorbente usado pierde la calidad de su fibra y porta grasas o bacterias; por norma va en la caneca Negra."
+    },
+    {
+      type: "mc",
+      question: "Un bombillo ahorrador fluorescente (CFL) se funde en casa. ¿Dónde debe entregarse?",
+      options: [
+        { text: "En un punto de recolección posconsumo de residuos peligrosos (RAEE), nunca en las 3 canecas comunes.", correct: true },
+        { text: "En la caneca Blanca junto con las botellas y frascos de vidrio transparente.", correct: false },
+        { text: "En la caneca Negra envuelto en papel periódico para evitar que corte la bolsa.", correct: false },
+        { text: "En la caneca Verde tras triturar el vidrio para aislar el filamento.", correct: false }
+      ],
+      explanation: "Los bombillos fluorescentes contienen trazas de mercurio y componentes electrónicos (RAEE), por lo que requieren gestión posconsumo especial."
+    },
+    {
+      type: "mc",
+      question: "¿Qué ocurre en una planta de reciclaje si arrojas una botella con líquido o yogur sin enjuagar dentro de la caneca Blanca?",
+      options: [
+        { text: "Contamina el papel y cartón limpio de la misma bolsa, haciendo que todo el material pierda valor y termine en relleno.", correct: true },
+        { text: "No ocurre nada porque las máquinas trituradoras lavan automáticamente todo con vapor industrial.", correct: false },
+        { text: "El yogur fermenta y ayuda a disolver las etiquetas plásticas facilitando el proceso.", correct: false },
+        { text: "Se clasifica automáticamente como residuo orgánico aprovechable de alta calidad.", correct: false }
+      ],
+      explanation: "La regla de oro de la caneca Blanca es 'limpio y seco': un solo envase con líquidos puede dañar kilos de papel y cartón."
+    },
+    {
+      type: "mc",
+      question: "Los envases Tetra Pak (cajas de leche o jugo) están hechos de cartón, polietileno y aluminio. ¿En qué caneca van?",
+      options: [
+        { text: "En la caneca Blanca, siempre que estén vacíos, escurridos y aplastados.", correct: true },
+        { text: "En la caneca Negra porque al tener 3 materiales distintos es imposible separarlos.", correct: false },
+        { text: "En la caneca Verde porque su componente principal (75%) es celulosa vegetal.", correct: false },
+        { text: "Únicamente en puntos de recolección de baterías y aceite usado.", correct: false }
+      ],
+      explanation: "Existen procesos industriales de hidropulpeo que separan el cartón del polialuminio, por lo que el Tetra Pak limpio va en la Blanca."
+    },
+    {
+      type: "mc",
+      question: "¿Cuál es la diferencia fundamental entre 'Reutilizar' y 'Reciclar' en la jerarquía de las 3R?",
+      options: [
+        { text: "Reutilizar es darle un nuevo uso directo a un objeto sin transformarlo; reciclar somete el material a un proceso industrial.", correct: true },
+        { text: "Son exactamente sinónimos y ambos requieren fundir el material en una fábrica.", correct: false },
+        { text: "Reciclar se hace únicamente en casa y reutilizar lo hacen las empresas recolectoras.", correct: false },
+        { text: "Reutilizar aplica solo para residuos orgánicos y reciclar solo para metales.", correct: false }
+      ],
+      explanation: "Usar un frasco de vidrio para guardar granos es reutilizar; fundir ese vidrio para fabricar una botella nueva es reciclar."
+    },
+    {
+      type: "mc",
+      question: "¿Por qué las bolsas plásticas de supermercado arrugadas y sucias con restos de mercado no deben ir en la caneca Blanca?",
+      options: [
+        { text: "Porque su grado de suciedad y mezcla de polímeros dificulta el reciclaje mecánico general; deben ir a la Negra.", correct: true },
+        { text: "Porque se convierten en abono orgánico en menos de 15 días dentro de la caneca verde.", correct: false },
+        { text: "Porque están prohibidas por la ley y deben quemarse en estufas de leña.", correct: false },
+        { text: "Porque se desintegran al entrar en contacto con el aire libre.", correct: false }
+      ],
+      explanation: "Las bolsas plásticas sucias con materia orgánica o grasa pierden su viabilidad de aprovechamiento y van en la caneca Negra."
+    },
+    {
+      type: "mc",
+      question: "Si una persona rompe accidentalmente un espejo o una ventana de vidrio en casa, ¿cómo debe desechar los fragmentos?",
+      options: [
+        { text: "Envueltos de manera segura en cartón grueso o periódico dentro de la caneca Negra para evitar accidentes al personal de aseo.", correct: true },
+        { text: "Sueltos en la caneca Blanca porque todo el vidrio es 100% reciclable sin importar su tipo.", correct: false },
+        { text: "Directamente en la caneca Verde para que sirva de drenaje en el compostaje.", correct: false },
+        { text: "Arrojados a la calle para que sean reutilizados por vidrierías locales.", correct: false }
+      ],
+      explanation: "Los espejos tienen capas químicas plateadas y los vidrios de ventanas tienen tratamientos térmicos especiales que no sirven para envases; además, por seguridad deben ir protegidos en la Negra."
+    },
+    {
+      type: "mc",
+      question: "¿Qué destino final tienen los residuos recolectados en la caneca NEGRA en la mayoría de ciudades?",
+      options: [
+        { text: "Relleno sanitario para disposición final controlada.", correct: true },
+        { text: "Plantas de fundición de metales preciosos.", correct: false },
+        { text: "Centros de generación de energía nuclear avanzada.", correct: false },
+        { text: "Exportación a países insulares para relleno de playas.", correct: false }
+      ],
+      explanation: "Lo que va a la caneca Negra no se puede aprovechar, por lo que su destino final es el relleno sanitario."
+    },
+    {
+      type: "mc",
+      question: "¿Cuál de los siguientes elementos se considera un residuo peligroso del hogar (posconsumo) y requiere manejo diferenciado?",
+      options: [
+        { text: "Pilas usadas, medicamentos vencidos y envases de plaguicidas.", correct: true },
+        { text: "Cáscaras de plátano y restos de ensalada cruda.", correct: false },
+        { text: "Cuadernos universitarios viejos sin espiral metálica.", correct: false },
+        { text: "Botellas de refresco de plástico transparente limpias.", correct: false }
+      ],
+      explanation: "Las pilas, medicamentos y plaguicidas contienen sustancias tóxicas que contaminan fuentes de agua si se botan en canecas comunes."
+    },
+    {
+      type: "mc",
+      question: "¿Qué significa la sigla RAEE en la gestión integral de residuos?",
+      options: [
+        { text: "Residuos de Aparatos Eléctricos y Electrónicos.", correct: true },
+        { text: "Reciclaje Automático de Envases Ecológicos.", correct: false },
+        { text: "Residuos Agrícolas Estables y Esterilizados.", correct: false },
+        { text: "Red Ambiental de Empresas Energéticas.", correct: false }
+      ],
+      explanation: "Los RAEE incluyen celulares, computadores, electrodomésticos y cables que requieren gestores autorizados."
+    },
+    {
+      type: "mc",
+      question: "En los envases plásticos aparece un triángulo con un número del 1 al 7. ¿Qué identifica el número 1 (PET)?",
+      options: [
+        { text: "Tereftalato de polietileno, usado comúnmente en botellas transparentes de agua y refrescos.", correct: true },
+        { text: "Policloruro de vinilo, usado exclusivamente en tuberías industriales pesadas.", correct: false },
+        { text: "Poliestireno expandido (icopor) de bandejas desechables.", correct: false },
+        { text: "Plástico biodegradable hecho 100% de almidón de maíz.", correct: false }
+      ],
+      explanation: "El PET (código 1) es uno de los plásticos más reciclados en el mundo cuando se deposita limpio en la caneca Blanca."
+    },
+    {
+      type: "mc",
+      question: "¿Por qué NO se recomienda introducir los residuos orgánicos dentro de bolsas plásticas cerradas en la caneca Verde?",
+      options: [
+        { text: "Porque el plástico impide la aireación, genera malos olores y contamina el abono final.", correct: true },
+        { text: "Porque las bolsas plásticas hacen explosión al entrar en contacto con cáscaras cítricas.", correct: false },
+        { text: "Porque la luz solar derrite el plástico en menos de 10 minutos.", correct: false },
+        { text: "Sí es obligatorio usar doble bolsa plástica negra dentro de la caneca Verde.", correct: false }
+      ],
+      explanation: "Para compostaje se deben usar bolsas compostables certificadas o vaciar los orgánicos directamente en el contenedor."
+    },
+    {
+      type: "mc",
+      question: "Tienes medicamentos vencidos o jarabes a medio usar en el botiquín de casa. ¿Cuál es su disposición correcta?",
+      options: [
+        { text: "Llevarlos a un contenedor Punto Azul ubicado en droguerías o centros comerciales.", correct: true },
+        { text: "Vaciar los jarabes por el inodoro y botar los frascos en la caneca Verde.", correct: false },
+        { text: "Triturar las pastillas y mezclarlas con la tierra de las materas.", correct: false },
+        { text: "Depositarlos en la caneca Blanca junto con las botellas de refresco.", correct: false }
+      ],
+      explanation: "Los fármacos contaminan las fuentes hídricas si van al desagüe y representan riesgos sanitarios en la basura común."
+    },
+    {
+      type: "mc",
+      question: "¿Qué son los 'lixiviados' en un relleno sanitario?",
+      options: [
+        { text: "Líquidos altamente contaminantes que se forman cuando el agua de lluvia percola a través de la basura en descomposición.", correct: true },
+        { text: "Gases nobles utilizados para inflar globos meteorológicos.", correct: false },
+        { text: "Abonos orgánicos certificados listos para agricultura ecológica.", correct: false },
+        { text: "Filtros de carbón activado que purifican el aire de las ciudades.", correct: false }
+      ],
+      explanation: "Separar los residuos orgánicos (caneca Verde) reduce drásticamente la generación de lixiviados en los rellenos sanitarios."
+    },
+    {
+      type: "mc",
+      question: "¿Cuál de los siguientes materiales pierde calidad en sus fibras cada vez que se recicla (supraciclaje inverso o 'downcycling')?",
+      options: [
+        { text: "El papel y el cartón, cuyas fibras de celulosa se acortan tras varios ciclos.", correct: true },
+        { text: "El vidrio, que solo puede fundirse un máximo de 2 veces.", correct: false },
+        { text: "El aluminio puro, que se convierte en plástico después del tercer reciclaje.", correct: false },
+        { text: "El oro y el cobre de las tarjetas electrónicas.", correct: false }
+      ],
+      explanation: "A diferencia del vidrio y el aluminio (que son infinitamente reciclables), la fibra del papel se acorta en cada ciclo."
+    },
+    {
+      type: "mc",
+      question: "¿Qué función cumplen las lombrices rojas californianas en el lombricompostaje?",
+      options: [
+        { text: "Digieren materia orgánica vegetal y producen humus de lombriz, un fertilizante de altísima calidad.", correct: true },
+        { text: "Consumen botellas de plástico PET y las transforman en agua potable.", correct: false },
+        { text: "Neutralizan baterías de litio y pilas alcalinas usadas.", correct: false },
+        { text: "Purifican aceites industriales quemados de motores.", correct: false }
+      ],
+      explanation: "La lombricultura acelera la transformación de los residuos de la caneca Verde en humus nutritivo para suelos."
+    },
+    {
+      type: "mc",
+      question: "¿Por qué los recibos térmicos de datáfonos y cajeros automáticos van en la caneca Negra y no en la Blanca?",
+      options: [
+        { text: "Porque están impregnados con reveladores químicos (como bisfenoles) que contaminan la pulpa del papel reciclado.", correct: true },
+        { text: "Porque están hechos de tela sintética impermeable.", correct: false },
+        { text: "Porque contienen chips electrónicos ocultos en el borde.", correct: false },
+        { text: "Porque son demasiado pequeños y se queman por fricción.", correct: false }
+      ],
+      explanation: "El papel térmico no es papel bond común; su recubrimiento químico obliga a descartarlo en la caneca Negra."
+    },
+    {
+      type: "mc",
+      question: "En la separación en la fuente, ¿por qué se recomienda aplastar las botellas PET y volver a ponerles la tapa antes de llevarlas a la Blanca?",
+      options: [
+        { text: "Reduce hasta un 70% el volumen en transporte y evita que las tapas pequeñas se pierdan en las bandas clasificadoras.", correct: true },
+        { text: "Para que la botella explote al llegar al camión compactador.", correct: false },
+        { text: "Porque las tapas están hechas de vidrio templado.", correct: false },
+        { text: "No se deben aplastar nunca porque pierden su código de barras.", correct: false }
+      ],
+      explanation: "Aplastar y tapar optimiza la logística de los recicladores y asegura que la tapa (polipropileno) también se aproveche."
+    },
+    {
+      type: "mc",
+      question: "¿Cuál es el principal impacto ambiental de arrojar una sola pila alcalina o de botón a la tierra o al agua?",
+      options: [
+        { text: "Puede contaminar miles de litros de agua al liberar metales pesados como mercurio, cadmio o plomo.", correct: true },
+        { text: "Aumenta la fertilidad del suelo al aportar hierro magnético.", correct: false },
+        { text: "Se disuelve inofensivamente en menos de 48 horas.", correct: false },
+        { text: "Produce gas oxígeno puro que mejora la calidad del aire.", correct: false }
+      ],
+      explanation: "Las pilas tienen carcasas que se corroen con el tiempo, liberando metales tóxicos en los ecosistemas."
+    },
+    {
+      type: "mc",
+      question: "¿Qué diferencia a un plástico 'biodegradable/compostable certificado' de un plástico 'oxo-degradable'?",
+      options: [
+        { text: "El compostable se convierte en biomasa, agua y CO₂; el oxo-degradable solo se fragmenta en microplásticos invisibles.", correct: true },
+        { text: "El oxo-degradable es comestible para animales marinos y el compostable es tóxico.", correct: false },
+        { text: "Ambos están hechos de acero inoxidable recubierto de cera.", correct: false },
+        { text: "No existe ninguna diferencia química ni ambiental entre ambos.", correct: false }
+      ],
+      explanation: "Los plásticos oxo-degradables fueron restringidos en muchos países precisamente porque generan microplásticos persistentes."
+    },
+    {
+      type: "mc",
+      question: "Si deseas desechar un colchón viejo o escombros de una remodelación en casa, ¿qué debes hacer?",
+      options: [
+        { text: "Solicitar el servicio de recolección de residuos voluminosos o llevarlos a puntos limpios autorizados.", correct: true },
+        { text: "Dejarlos junto a las bolsas de la caneca Blanca en la esquina del barrio.", correct: false },
+        { text: "Triturar los escombros y depositarlos en la caneca Verde.", correct: false },
+        { text: "Quemarlos en un lote baldío durante la noche.", correct: false }
+      ],
+      explanation: "Los residuos de construcción y demolición (RCD) y voluminosos tienen gestión especial fuera de la recolección ordinaria."
+    },
+    {
+      type: "mc",
+      question: "¿Cuál de estas acciones corresponde al concepto de 'Ecodiseño'?",
+      options: [
+        { text: "Diseñar un envase usando un solo tipo de plástico transparente sin tintas tóxicas para facilitar su reciclaje.", correct: true },
+        { text: "Pintar de color verde las cajas de icopor no reciclables.", correct: false },
+        { text: "Mezclar 5 materiales distintos en un empaque para que sea imposible abrirlo.", correct: false },
+        { text: "Fabricar productos diseñados para dañarse al año de uso.", correct: false }
+      ],
+      explanation: "El ecodiseño piensa en todo el ciclo de vida del producto desde su concepción para minimizar residuos."
+    },
+    {
+      type: "mc",
+      question: "¿Por qué los envases de aerosol (desodorantes, insecticidas o pinturas) NO deben perforarse ni ir en la caneca Blanca común?",
+      options: [
+        { text: "Porque contienen gases a presión y residuos inflamables o tóxicos que pueden explotar al compactarse.", correct: true },
+        { text: "Porque están fabricados de cerámica volcánica.", correct: false },
+        { text: "Porque disuelven el plástico de las demás botellas.", correct: false },
+        { text: "Sí deben ir en la caneca Verde para espantar plagas del compost.", correct: false }
+      ],
+      explanation: "Los aerosoles representan riesgo de explosión en camiones compactadores y requieren manejo de residuos especiales/peligrosos."
+    },
+    {
+      type: "mc",
+      question: "¿Qué porcentaje aproximado de los residuos sólidos generados en un hogar típico corresponde a materia orgánica (caneca Verde)?",
+      options: [
+        { text: "Entre el 50% y el 60% del total de residuos domésticos.", correct: true },
+        { text: "Menos del 2% del total.", correct: false },
+        { text: "Exactamente el 99% de la basura de una casa.", correct: false },
+        { text: "0%, porque los hogares no generan materia orgánica.", correct: false }
+      ],
+      explanation: "Más de la mitad de la bolsa de basura doméstica son restos de alimentos y poda; separarlos en la Verde transforma la gestión urbana."
+    },
+
+    // --- 25 PREGUNTAS ABIERTAS ---
+    {
+      type: "open",
+      question: "¿Cómo se llama el proceso biológico mediante el cual los residuos orgánicos de la caneca Verde se transforman en abono natural para las plantas?",
+      acceptedAnswers: ["compostaje", "compost", "compostar", "compostacion"],
+      displayAnswer: "Compostaje",
+      explanation: "El compostaje es la descomposición controlada de materia orgánica (cáscaras, restos vegetales) para producir abono fértil."
+    },
+    {
+      type: "open",
+      question: "Según el código de colores vigente en Colombia, escribe el COLOR de la caneca donde debes depositar los residuos no aprovechables como el papel higiénico y las envolturas metalizadas:",
+      acceptedAnswers: ["negro", "negra", "caneca negra", "color negro"],
+      displayAnswer: "Negro (Caneca Negra)",
+      explanation: "El color Negro identifica los residuos no aprovechables que van a disposición final."
+    },
+    {
+      type: "open",
+      question: "De las 3R de la ecología (Reducir, Reutilizar y Reciclar), ¿cuál es la PRIMERA y más importante porque evita que el residuo llegue a existir?",
+      acceptedAnswers: ["reducir", "la reduccion", "reduccion"],
+      displayAnswer: "Reducir",
+      explanation: "El mejor residuo es el que no se genera; por eso Reducir ocupa el primer lugar en la jerarquía ambiental."
+    },
+    {
+      type: "open",
+      question: "Cuando terminas de fritar alimentos en casa, nunca debes verter el aceite de cocina usado por el lavaplatos porque contamina miles de litros de agua. ¿En qué recipiente debes almacenarlo para entregarlo a un gestor?",
+      acceptedAnswers: ["botella", "botella plastica", "una botella", "botella de plastico", "envase plastico", "galon", "tarro"],
+      displayAnswer: "Una botella plástica cerrada",
+      explanation: "El aceite usado debe dejarse enfriar, filtrarse y guardarse en una botella plástica bien tapada para llevarlo a un punto limpio."
+    },
+    {
+      type: "open",
+      question: "Para que un residuo de papel, cartón o plástico pueda aprovecharse en la caneca Blanca debe cumplir dos condiciones físicas indispensables: estar limpio y estar...",
+      acceptedAnswers: ["seco", "seca", "secos", "secas"],
+      displayAnswer: "Seco",
+      explanation: "La humedad provoca hongos y degrada el papel y cartón; todo material aprovechable debe estar limpio y seco."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre del metal ligero, 100% reciclable e infinitas veces reutilizable, con el que se fabrican las latas de refresco y cerveza:",
+      acceptedAnswers: ["aluminio", "el aluminio"],
+      displayAnswer: "Aluminio",
+      explanation: "El aluminio de las latas es uno de los materiales con mayor tasa de recuperación y reciclaje en el mundo."
+    },
+    {
+      type: "open",
+      question: "¿Qué nombre recibe el conjunto de acciones orientadas a la recuperación, aprovechamiento y valorización de los residuos a través de cadenas productivas circulares?",
+      acceptedAnswers: ["economia circular", "reciclaje", "gestion integral", "recuperacion"],
+      displayAnswer: "Economía Circular",
+      explanation: "La economía circular busca que los materiales permanezcan en el ciclo productivo el mayor tiempo posible."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre del gas de efecto invernadero que se produce masivamente cuando los residuos orgánicos se descomponen sin oxígeno (enterrados en rellenos sanitarios):",
+      acceptedAnswers: ["metano", "gas metano", "ch4"],
+      displayAnswer: "Metano",
+      explanation: "Evitar que los orgánicos lleguen al relleno sanitario y compostarlos reduce la emisión de gas metano a la atmósfera."
+    },
+    {
+      type: "open",
+      question: "Además de reciclar y reducir, ¿cómo se le llama a la acción de reparar, adaptar o dar un nuevo uso creativo a un objeto viejo sin pasar por procesos industriales?",
+      acceptedAnswers: ["reutilizar", "reutilizacion", "reuso"],
+      displayAnswer: "Reutilizar",
+      explanation: "Reutilizar alarga la vida útil de los objetos y disminuye la demanda de nuevos recursos."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre del principal polímero sintético derivado del petróleo con el que se fabrican las bolsas plásticas de un solo uso:",
+      acceptedAnswers: ["plastico", "polietileno", "el plastico", "petroleo"],
+      displayAnswer: "Plástico (Polietileno)",
+      explanation: "El plástico convencional tarda cientos de años en degradarse, de ahí la importancia de reducir su consumo diario."
+    },
+    {
+      type: "open",
+      question: "Escribe el COLOR de la caneca en la que se deben depositar los residuos aprovechables limpios y secos como papel, cartón, vidrio, plástico y metales:",
+      acceptedAnswers: ["blanco", "blanca", "caneca blanca", "color blanco"],
+      displayAnswer: "Blanco (Caneca Blanca)",
+      explanation: "La caneca Blanca está destinada exclusivamente a materiales aprovechables limpios y secos."
+    },
+    {
+      type: "open",
+      question: "Escribe el COLOR de la caneca destinada a los residuos orgánicos aprovechables como restos de comida y desechos agrícolas:",
+      acceptedAnswers: ["verde", "caneca verde", "color verde"],
+      displayAnswer: "Verde (Caneca Verde)",
+      explanation: "El color Verde identifica los residuos orgánicos biodegradables aptos para compostaje."
+    },
+    {
+      type: "open",
+      question: "¿Cómo se llaman las partículas plásticas diminutas (menores a 5 milímetros) que resultan de la fragmentación de envases y llegan a los océanos y alimentos?",
+      acceptedAnswers: ["microplasticos", "microplastico", "nanoplasticos"],
+      displayAnswer: "Microplásticos",
+      explanation: "Los microplásticos persisten en los ecosistemas acuáticos y entran en la cadena trófica."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre del material transparente, fabricado a partir de arena de sílice, que puede reciclarse al 100% infinitas veces sin perder pureza:",
+      acceptedAnswers: ["vidrio", "el vidrio", "cristal"],
+      displayAnswer: "Vidrio",
+      explanation: "El vidrio es 100% reciclable de forma indefinida cuando se deposita limpio en la caneca Blanca."
+    },
+    {
+      type: "open",
+      question: "¿Cómo se denomina la práctica de separar los residuos desde el mismo momento y lugar en que se generan (hogar, colegio u oficina)?",
+      acceptedAnswers: ["separacion en la fuente", "separar en la fuente", "clasificacion en la fuente", "separacion"],
+      displayAnswer: "Separación en la fuente",
+      explanation: "La separación en la fuente es el paso clave para evitar que los residuos aprovechables se contaminen."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre del abono oscuro y rico en nutrientes producido por lombrices rojas al digerir residuos orgánicos:",
+      acceptedAnswers: ["humus", "humus de lombriz", "lombricompost", "compost"],
+      displayAnswer: "Humus (Humus de lombriz)",
+      explanation: "El humus mejora la estructura, retención de agua y fertilidad de los suelos agrícolas."
+    },
+    {
+      type: "open",
+      question: "¿Qué nombre recibe el indicador ambiental que mide el total de gases de efecto invernadero emitidos directa o indirectamente por una persona, producto o actividad?",
+      acceptedAnswers: ["huella de carbono", "huella carbono"],
+      displayAnswer: "Huella de carbono",
+      explanation: "Reciclar, ahorrar energía y reducir desperdicios disminuye nuestra huella de carbono."
+    },
+    {
+      type: "open",
+      question: "¿Cómo se llama el material vegetal fibroso con el que se fabrican el papel y el cartón a partir de la pulpa de los árboles?",
+      acceptedAnswers: ["celulosa", "la celulosa", "madera"],
+      displayAnswer: "Celulosa",
+      explanation: "Reciclar una tonelada de papel salva alrededor de 17 árboles adultos productores de celulosa."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre de la enfermedad o contaminación causada cuando la basura obstruye alcantarillas y quebradas provocando desbordamientos de agua:",
+      acceptedAnswers: ["inundacion", "inundaciones", "taponamiento"],
+      displayAnswer: "Inundaciones",
+      explanation: "Arrojar residuos a la calle tapa los sumideros y causa graves inundaciones urbanas."
+    },
+    {
+      type: "open",
+      question: "¿Qué nombre reciben los trabajadores fundamentales de la cadena de aprovechamiento que recolectan, clasifican y recuperan materiales en las ciudades?",
+      acceptedAnswers: ["recicladores", "reciclador", "recicladores de oficio", "recuperadores"],
+      displayAnswer: "Recicladores (Recicladores de oficio)",
+      explanation: "Entregar los residuos limpios y secos en la caneca Blanca dignifica y apoya el trabajo de los recicladores."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre de la técnica de riego o fertilización que aprovecha el agua de lluvia captada desde los techos de las viviendas:",
+      acceptedAnswers: ["cosecha de agua", "captacion de agua lluvia", "agua lluvia", "recoleccion de agua lluvia"],
+      displayAnswer: "Captación de agua lluvia",
+      explanation: "Recolectar agua lluvia permite regar jardines y lavar pisos sin gastar agua potable."
+    },
+    {
+      type: "open",
+      question: "¿Cómo se denomina la capacidad de un material para descomponerse de forma natural por acción de microorganismos como bacterias y hongos?",
+      acceptedAnswers: ["biodegradabilidad", "biodegradable", "descomposicion"],
+      displayAnswer: "Biodegradabilidad",
+      explanation: "Los residuos de la caneca Verde destacan por su rápida biodegradabilidad natural."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre del elemento químico tóxico presente en los termómetros antiguos y bombillos fluorescentes que nunca debe ir a la basura común:",
+      acceptedAnswers: ["mercurio", "el mercurio", "hg"],
+      displayAnswer: "Mercurio",
+      explanation: "El mercurio es un metal pesado neurotóxico que requiere entrega en puntos posconsumo."
+    },
+    {
+      type: "open",
+      question: "¿Qué palabra describe el consumo consciente en el que elegimos productos duraderos, locales y con menor impacto ambiental?",
+      acceptedAnswers: ["consumo responsable", "consumo sostenible", "sostenibilidad"],
+      displayAnswer: "Consumo responsable",
+      explanation: "El consumo responsable ataca el problema de los residuos desde la decisión de compra."
+    },
+    {
+      type: "open",
+      question: "Escribe el nombre del ecosistema marino o terrestre donde terminan millones de toneladas de plástico mal gestionado formando grandes islas flotantes:",
+      acceptedAnswers: ["oceano", "mar", "los oceanos", "el mar", "oceanos"],
+      displayAnswer: "Océano (Mar)",
+      explanation: "Proteger los ríos y clasificar bien en tierra evita que los plásticos lleguen a los océanos."
+    }
+  ];
+
+  /* =========================================================================
+     LOGROS
+     ========================================================================= */
+  const ACHIEVEMENTS_LIST = [
+    { id: "first_win", icon: "🌱", title: "Primer Paso Verde", desc: "Completa tu primera partida de EcoReto." },
+    { id: "streak_5", icon: "🔥", title: "Racha Imparable", desc: "Consigue 5 aciertos consecutivos sin fallar." },
+    { id: "perfect_10", icon: "💎", title: "Clasificador Perfecto", desc: "Completa una partida clásica con 100% de precisión." },
+    { id: "expert_master", icon: "🧠", title: "Mente Maestra Ambiental", desc: "Supera el Modo Experto con al menos 7 aciertos." },
+    { id: "expert_perfect", icon: "👑", title: "Oráculo de Gaia", desc: "Responde correctamente las 10 preguntas del Modo Experto sin fallar ninguna." },
+    { id: "blitz_hero", icon: "🚀", title: "Velocista Ecológico", desc: "Supera los 120 puntos en el modo Contrarreloj." },
+    { id: "efficient_sorter", icon: "⚡", title: "Clasificador Eficiente", desc: "Clasifica 20 residuos correctamente en el modo Contrarreloj." },
+    { id: "explorer", icon: "📚", title: "Sabio del Reciclaje", desc: "Visita la guía de aprendizaje del código de colores." }
+  ];
+
+  let userState = JSON.parse(localStorage.getItem("ecoreto_v3_state")) || {
+    bestScore: 0,
+    unlocked: [],
+    soundEnabled: true,
+    musicEnabled: false
+  };
+
+  function saveState() {
+    localStorage.setItem("ecoreto_v3_state", JSON.stringify(userState));
+    updateHeaderStats();
+  }
+
+  function unlockAchievement(id) {
+    if (!userState.unlocked.includes(id)) {
+      userState.unlocked.push(id);
+      saveState();
+      playTone(880, 0.12);
+      setTimeout(() => playTone(1174, 0.2), 120);
+      setBotExpression("bot-game", "achievement");
+      setBotExpression("bot-result", "achievement");
+    }
+  }
+
+  function updateHeaderStats() {
+    document.getElementById("hdr-best").textContent = userState.bestScore;
+    document.getElementById("hdr-ach").textContent = `${userState.unlocked.length}/${ACHIEVEMENTS_LIST.length}`;
+    document.getElementById("btn-sound-toggle").textContent = userState.soundEnabled ? "🔔 Efectos: ON" : "🔕 Efectos: OFF";
+    const musicBtn = document.getElementById("btn-music-toggle");
+    if (musicBtn) {
+      musicBtn.textContent = isMusicPlaying ? "🎵 Música: ON" : "🔇 Música: OFF";
+    }
+  }
+
+  /* =========================================================================
+     AUDIO SINTÉTICO, MÚSICA AMBIENTAL RELAJANTE Y VOZ
+     ========================================================================= */
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let isMusicPlaying = false;
+  let musicLoopTimer = null;
+  let musicStep = 0;
+
+  const AMBIENT_CHORDS = [
+    [174.61, 220.00, 261.63, 329.63], // Fmaj7
+    [130.81, 196.00, 246.94, 329.63], // Cmaj7
+    [146.83, 220.00, 261.63, 349.23], // Dm7
+    [116.54, 174.61, 220.00, 293.66]  // Bbmaj7
+  ];
+
+  const AMBIENT_MELODY = [
+    523.25, 440.00, 392.00, 349.23,
+    392.00, 440.00, 523.25, 587.33,
+    523.25, 440.00, 349.23, 329.63,
+    349.23, 392.00, 440.00, 392.00
+  ];
+
+  function playAmbientPadStep() {
+    if (!isMusicPlaying) return;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+
+    const now = audioCtx.currentTime;
+    const chord = AMBIENT_CHORDS[musicStep % AMBIENT_CHORDS.length];
+
+    chord.forEach(freq => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.022, now + 0.9);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.6);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 3.7);
+    });
+
+    [0, 1].forEach(offset => {
+      const noteFreq = AMBIENT_MELODY[(musicStep * 2 + offset) % AMBIENT_MELODY.length];
+      const noteTime = now + offset * 1.6 + 0.3;
+      const oscM = audioCtx.createOscillator();
+      const gainM = audioCtx.createGain();
+      oscM.type = "triangle";
+      oscM.frequency.setValueAtTime(noteFreq, noteTime);
+
+      gainM.gain.setValueAtTime(0.0001, noteTime);
+      gainM.gain.linearRampToValueAtTime(0.018, noteTime + 0.25);
+      gainM.gain.exponentialRampToValueAtTime(0.0001, noteTime + 1.5);
+
+      oscM.connect(gainM);
+      gainM.connect(audioCtx.destination);
+      oscM.start(noteTime);
+      oscM.stop(noteTime + 1.6);
+    });
+
+    musicStep++;
+  }
+
+  function startAmbientMusic() {
+    if (isMusicPlaying) return;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    isMusicPlaying = true;
+    userState.musicEnabled = true;
+    saveState();
+    playAmbientPadStep();
+    musicLoopTimer = setInterval(playAmbientPadStep, 3200);
+  }
+
+  function stopAmbientMusic() {
+    isMusicPlaying = false;
+    userState.musicEnabled = false;
+    clearInterval(musicLoopTimer);
+    musicLoopTimer = null;
+    saveState();
+  }
+
+  function toggleMusic() {
+    if (isMusicPlaying) {
+      stopAmbientMusic();
+    } else {
+      startAmbientMusic();
+    }
+  }
+
+  function playTone(freq, duration = 0.15, type = "sine") {
+    if (!userState.soundEnabled) return;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  }
+
+  function toggleSound() {
+    userState.soundEnabled = !userState.soundEnabled;
+    saveState();
+  }
+
+  function speakText(text) {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[\u{1F300}-\u{1FAFF}]/gu, "");
+    const utter = new SpeechSynthesisUtterance(cleanText);
+    utter.lang = "es-CO";
+    utter.rate = 1.03;
+    const homeBot = document.getElementById("bot-home");
+    utter.onstart = () => homeBot && homeBot.classList.add("talking");
+    utter.onend = () => homeBot && homeBot.classList.remove("talking");
+    window.speechSynthesis.speak(utter);
+  }
+
+  /* =========================================================================
+     NAVEGACIÓN ENTRE PANTALLAS
+     ========================================================================= */
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    if (id === "learn") unlockAchievement("explorer");
+    if (id === "achievements") renderAchievements();
+    if (id === "home") {
+      setBotExpression("bot-home", "welcome");
+      document.getElementById("home-speech").textContent =
+        "¡Hola! Soy EcoBot ♻️🤖. Ayúdame a clasificar los residuos en las canecas Blanca, Negra y Verde según el código de colores. ¡Vamos!";
+    }
+  }
+
+  function toggleTrap(btn) {
+    const box = btn.nextElementSibling;
+    box.classList.toggle("open");
+    btn.textContent = box.classList.contains("open") ? "🔼 Ocultar error común" : "⚠️ Ver errores comunes";
+  }
+
+  function renderAchievements() {
+    const grid = document.getElementById("achievements-grid");
+    grid.innerHTML = ACHIEVEMENTS_LIST.map(a => {
+      const isUnlocked = userState.unlocked.includes(a.id);
+      return `
+        <div class="achievement ${isUnlocked ? "" : "locked"}">
+          <div class="ach-icon">${isUnlocked ? a.icon : "🔒"}</div>
+          <div class="ach-title">${a.title}</div>
+          <div class="ach-desc">${a.desc}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function resetProgress() {
+    if (confirm("¿Seguro que deseas borrar tu récord y logros desbloqueados?")) {
+      userState = { bestScore: 0, unlocked: [], soundEnabled: true, musicEnabled: isMusicPlaying };
+      saveState();
+      renderAchievements();
+    }
+  }
+
+  /* =========================================================================
+     MOTOR DE JUEGO UNIFICADO CON REGISTRO DE TIEMPO
+     ========================================================================= */
+  let selectedMode = "classic";
+  let queue = [];
+  let currentIndex = 0;
+  let score = 0;
+  let streak = 0;
+  let maxStreak = 0;
+  let correctCount = 0;
+  let totalAnswered = 0;
+  let locked = false;
+  let timerInterval = null;
+  let timeLeft = 60;
+  let gameStartTime = 0;
+
+  function selectMode(mode, el) {
+    selectedMode = mode;
+    document.querySelectorAll(".mode-card").forEach(c => c.classList.remove("selected"));
+    el.classList.add("selected");
+  }
+
+  function shuffle(arr) {
+    return [...arr].sort(() => Math.random() - 0.5);
+  }
+
+  function normalizeText(str) {
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()¿?¡!]/g, "")
+      .trim();
+  }
+
+  function formatDuration(totalSeconds) {
+    const secs = Math.max(1, Math.round(totalSeconds));
+    if (secs < 60) return `${secs}s`;
+    const mins = Math.floor(secs / 60);
+    const remSecs = secs % 60;
+    return remSecs > 0 ? `${mins}m ${remSecs}s` : `${mins}m`;
+  }
+
+  function startGame() {
+    if (userState.musicEnabled && !isMusicPlaying) {
+      startAmbientMusic();
+    }
+
+    clearInterval(timerInterval);
+    score = 0;
+    streak = 0;
+    maxStreak = 0;
+    correctCount = 0;
+    totalAnswered = 0;
+    currentIndex = 0;
+    locked = false;
+    gameStartTime = Date.now();
+
+    const standardArena = document.getElementById("standard-arena");
+    const expertArena = document.getElementById("expert-arena");
+
+    if (selectedMode === "expert") {
+      standardArena.style.display = "none";
+      expertArena.style.display = "flex";
+      queue = shuffle(EXPERT_DB).slice(0, 10);
+    } else if (selectedMode === "classic") {
+      standardArena.style.display = "block";
+      expertArena.style.display = "none";
+      queue = shuffle(WASTE_DB).slice(0, 10);
+    } else {
+      standardArena.style.display = "block";
+      expertArena.style.display = "none";
+      queue = shuffle(WASTE_DB);
+    }
+
+    document.getElementById("game-score").textContent = "0";
+    document.getElementById("combo-badge").classList.remove("active");
+    document.getElementById("feedback").style.display = "none";
+    document.getElementById("feedback").className = "feedback";
+
+    const timerBadge = document.getElementById("timer-badge");
+    if (selectedMode === "blitz") {
+      timeLeft = 60;
+      timerBadge.style.display = "inline-flex";
+      timerBadge.textContent = `⏱️ ${timeLeft}s`;
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerBadge.textContent = `⏱️ ${timeLeft}s`;
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          endGame();
+        }
+      }, 1000);
+    } else {
+      timerBadge.style.display = "none";
+    }
+
+    showScreen("game");
+    loadCurrentQuestion();
+  }
+
+  function exitGame() {
+    clearInterval(timerInterval);
+    window.speechSynthesis.cancel();
+    showScreen("home");
+  }
+
+  function loadCurrentQuestion() {
+    if (selectedMode !== "blitz" && currentIndex >= queue.length) {
+      endGame();
+      return;
+    }
+    if (selectedMode === "blitz" && currentIndex >= queue.length) {
+      queue = shuffle(WASTE_DB);
+      currentIndex = 0;
+    }
+
+    setBotExpression("bot-game", streak >= 3 ? "streak" : "welcome");
+
+    const pct = selectedMode === "blitz"
+      ? Math.min(100, (totalAnswered * 5))
+      : Math.round((currentIndex / queue.length) * 100);
+    document.getElementById("progress-fill").style.width = `${pct}%`;
+
+    if (selectedMode === "expert") {
+      loadExpertItem(queue[currentIndex]);
+    } else {
+      const item = queue[currentIndex];
+      const card = document.getElementById("waste-card");
+      card.style.display = "block";
+      card.style.transform = "";
+      document.getElementById("waste-emoji").textContent = item.emoji;
+      document.getElementById("waste-name").textContent = item.name;
+      document.getElementById("waste-hint").textContent = item.hint;
+      document.getElementById("game-speech").textContent = `¿En qué caneca debemos depositar: "${item.name}"?`;
+    }
+
+    locked = false;
+  }
+
+  /* =========================================================================
+     MÓDULO EXPERTO CON FRASES ECOLÓGICAS ALEATORIAS
+     ========================================================================= */
+  function loadExpertItem(q) {
+    const badge = document.getElementById("expert-badge-type");
+    const qText = document.getElementById("expert-q-text");
+    const optGrid = document.getElementById("expert-options-grid");
+    const openBox = document.getElementById("expert-open-box");
+
+    qText.textContent = `Reto ${currentIndex + 1}/${queue.length}: ${q.question}`;
+
+    if (q.type === "mc") {
+      badge.textContent = "🧠 Opción Múltiple (Cuidado con las 3 trampas)";
+      document.getElementById("game-speech").textContent = "Analiza bien cada opción; solo una es correcta y las otras tres son trampas.";
+      openBox.style.display = "none";
+      optGrid.style.display = "grid";
+
+      const shuffledOpts = shuffle(q.options);
+      const letters = ["A", "B", "C", "D"];
+      optGrid.innerHTML = shuffledOpts.map((opt, idx) => `
+        <button class="expert-opt-btn" data-correct="${opt.correct}" onclick="handleExpertMC(this, ${opt.correct})">
+          <span class="opt-letter">${letters[idx]}</span>
+          <span>${opt.text}</span>
+        </button>
+      `).join("");
+    } else {
+      badge.textContent = "✍️ Pregunta Abierta (Escribe la respuesta)";
+      const randomPhrase = ECO_MOTIVATIONAL_PHRASES[Math.floor(Math.random() * ECO_MOTIVATIONAL_PHRASES.length)];
+      document.getElementById("game-speech").textContent = randomPhrase;
+      optGrid.style.display = "none";
+      openBox.style.display = "flex";
+
+      const input = document.getElementById("expert-text-input");
+      const btn = document.getElementById("expert-submit-btn");
+      input.value = "";
+      input.disabled = false;
+      btn.disabled = false;
+      document.getElementById("expert-open-hint").textContent = randomPhrase;
+      setTimeout(() => input.focus(), 80);
+    }
+  }
+
+  function handleExpertMC(btnEl, isCorrect) {
+    if (locked) return;
+    locked = true;
+
+    const q = queue[currentIndex];
+    const allBtns = document.querySelectorAll(".expert-opt-btn");
+    allBtns.forEach(b => {
+      b.disabled = true;
+      if (b.dataset.correct === "true") {
+        b.classList.add("opt-correct");
+      }
+    });
+
+    if (!isCorrect) {
+      btnEl.classList.add("opt-wrong");
+    }
+
+    processResult(isCorrect, q.explanation);
+  }
+
+  function submitExpertOpenAnswer() {
+    if (locked) return;
+    const input = document.getElementById("expert-text-input");
+    const rawVal = input.value.trim();
+    if (!rawVal) {
+      input.focus();
+      return;
+    }
+
+    locked = true;
+    input.disabled = true;
+    document.getElementById("expert-submit-btn").disabled = true;
+
+    const q = queue[currentIndex];
+    const userClean = normalizeText(rawVal);
+    const isCorrect = q.acceptedAnswers.some(ans => {
+      const targetClean = normalizeText(ans);
+      return userClean === targetClean || (targetClean.length >= 5 && userClean.includes(targetClean));
+    });
+
+    const extraInfo = isCorrect
+      ? q.explanation
+      : `La respuesta esperada era: <strong>${q.displayAnswer}</strong>. ${q.explanation}`;
+
+    processResult(isCorrect, extraInfo);
+  }
+
+  /* =========================================================================
+     PROCESAMIENTO DE RESPUESTAS
+     ========================================================================= */
+  function handleAnswer(chosenBin) {
+    if (locked || selectedMode === "expert") return;
+    locked = true;
+
+    const card = document.getElementById("waste-card");
+    card.style.transition = "opacity 0.2s ease, transform 0.2s ease";
+    card.style.opacity = "0";
+    card.style.transform = "scale(0.8)";
+
+    const item = queue[currentIndex];
+    const isCorrect = (chosenBin === item.bin);
+    const binNames = { white: "BLANCA", black: "NEGRA", green: "VERDE" };
+    const detail = isCorrect
+      ? item.why
+      : `Va en la caneca ${binNames[item.bin]}. ${item.why}`;
+
+    processResult(isCorrect, detail);
+  }
+
+  function processResult(isCorrect, explanationText) {
+    const fb = document.getElementById("feedback");
+    totalAnswered++;
+
+    if (isCorrect) {
+      correctCount++;
+      streak++;
+      if (streak > maxStreak) maxStreak = streak;
+      const basePts = selectedMode === "expert" ? 15 : 10;
+      const bonus = streak >= 3 ? 5 : 0;
+      score += basePts + bonus;
+
+      playTone(587.33, 0.1);
+      setTimeout(() => playTone(880, 0.16), 90);
+
+      setBotExpression("bot-game", streak >= 3 ? "streak" : "correct");
+
+      fb.className = "feedback ok";
+      fb.innerHTML = `✅ <strong>¡Correcto! (+${basePts + bonus} pts)</strong> ${explanationText}`;
+      document.getElementById("game-speech").textContent = streak >= 3
+        ? `¡Racha x${streak}! ¡Dominas el tema! 😎🔥`
+        : "¡Excelente respuesta! Así cuidamos nuestro planeta 🌍.";
+
+      if (streak >= 5) unlockAchievement("streak_5");
+      if (selectedMode === "blitz" && correctCount >= 20) unlockAchievement("efficient_sorter");
+    } else {
+      streak = 0;
+      playTone(220, 0.25, "sawtooth");
+
+      setBotExpression("bot-game", "error");
+
+      fb.className = "feedback err";
+      fb.innerHTML = `❌ <strong>¡Ups! Esa no era...</strong> ${explanationText}`;
+      document.getElementById("game-speech").textContent = "¡Ups! Esa no era... Lee la explicación abajo para no caer en la trampa.";
+    }
+
+    document.getElementById("game-score").textContent = score;
+    const comboBadge = document.getElementById("combo-badge");
+    if (streak >= 2) {
+      comboBadge.textContent = `🔥 Racha x${streak}`;
+      comboBadge.classList.add("active");
+    } else {
+      comboBadge.classList.remove("active");
+    }
+
+    const delay = selectedMode === "blitz" ? 950 : selectedMode === "expert" ? 2400 : 1600;
+    setTimeout(() => {
+      currentIndex++;
+      const card = document.getElementById("waste-card");
+      if (card) {
+        card.style.transition = "none";
+        card.style.opacity = "1";
+        card.style.transform = "";
+      }
+      if (selectedMode !== "blitz") fb.style.display = "none";
+      loadCurrentQuestion();
+    }, delay);
+  }
+
+  function endGame() {
+    clearInterval(timerInterval);
+    document.getElementById("progress-fill").style.width = "100%";
+
+    const elapsedSeconds = selectedMode === "blitz"
+      ? 60
+      : (Date.now() - gameStartTime) / 1000;
+
+    const acc = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 0;
+    if (score > userState.bestScore) userState.bestScore = score;
+
+    const prevUnlockedCount = userState.unlocked.length;
+    unlockAchievement("first_win");
+    if (selectedMode === "classic" && correctCount === queue.length) unlockAchievement("perfect_10");
+    if (selectedMode === "expert" && correctCount >= 7) unlockAchievement("expert_master");
+    if (selectedMode === "expert" && correctCount === queue.length) unlockAchievement("expert_perfect");
+    if (selectedMode === "blitz" && score >= 120) unlockAchievement("blitz_hero");
+    if (selectedMode === "blitz" && correctCount >= 20) unlockAchievement("efficient_sorter");
+    const unlockedNew = userState.unlocked.length > prevUnlockedCount;
+    saveState();
+
+    document.getElementById("result-score").textContent = `${score} pts`;
+    document.getElementById("res-correct").textContent = `${correctCount}/${totalAnswered}`;
+    document.getElementById("res-streak").textContent = maxStreak;
+    document.getElementById("res-acc").textContent = `${acc}%`;
+    document.getElementById("res-time").textContent = formatDuration(elapsedSeconds);
+
+    const title = acc >= 80 ? "¡Excelente trabajo! 🌟" : acc >= 50 ? "¡Buen intento, sigue practicando! 🌱" : "¡Sigamos aprendiendo juntos! 🤖";
+    const msg = acc >= 80
+      ? "Cuidemos juntos el medio ambiente. ¡Eres un verdadero Guardián Ambiental!"
+      : "Revisa la sección Aprender para fortalecer tus conocimientos y superar las trampas.";
+
+    document.getElementById("result-title").textContent = title;
+    document.getElementById("result-msg").textContent = msg;
+
+    setBotExpression("bot-result", unlockedNew ? "achievement" : "gameover");
+    showScreen("result");
+  }
+
+  /* =========================================================================
+     SOPORTE DRAG & DROP SIN RETARDO
+     ========================================================================= */
+  const card = document.getElementById("waste-card");
+  const bins = document.querySelectorAll(".bin");
+
+  card.addEventListener("dragstart", () => card.classList.add("dragging"));
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    bins.forEach(b => b.classList.remove("drag-over"));
+  });
+
+  bins.forEach(bin => {
+    bin.addEventListener("dragover", e => {
+      e.preventDefault();
+      bin.classList.add("drag-over");
+    });
+    bin.addEventListener("dragleave", () => bin.classList.remove("drag-over"));
+    bin.addEventListener("drop", e => {
+      e.preventDefault();
+      bin.classList.remove("drag-over");
+      handleAnswer(bin.dataset.bin);
+    });
+  });
+
+  let touchStartX = 0, touchStartY = 0;
+  card.addEventListener("touchstart", e => {
+    if (locked || selectedMode === "expert") return;
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    card.classList.add("dragging");
+  }, { passive: true });
+
+  card.addEventListener("touchmove", e => {
+    if (locked || selectedMode === "expert") return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    card.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+
+    bins.forEach(bin => {
+      const rect = bin.getBoundingClientRect();
+      if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) {
+        bin.classList.add("drag-over");
+      } else {
+        bin.classList.remove("drag-over");
+      }
+    });
+  }, { passive: true });
+
+  card.addEventListener("touchend", e => {
+    card.classList.remove("dragging");
+    const t = e.changedTouches[0];
+    bins.forEach(bin => {
+      bin.classList.remove("drag-over");
+      const rect = bin.getBoundingClientRect();
+      if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) {
+        handleAnswer(bin.dataset.bin);
+      }
+    });
+  });
+
+  document.addEventListener("keydown", e => {
+    if (!document.getElementById("game").classList.contains("active")) return;
+
+    if (selectedMode === "expert") {
+      const currentQ = queue[currentIndex];
+      if (!currentQ) return;
+      if (currentQ.type === "open" && e.key === "Enter") {
+        submitExpertOpenAnswer();
+      } else if (currentQ.type === "mc" && ["1", "2", "3", "4"].includes(e.key)) {
+        const btns = document.querySelectorAll(".expert-opt-btn");
+        const idx = parseInt(e.key, 10) - 1;
+        if (btns[idx]) btns[idx].click();
+      }
+    } else {
+      if (e.key === "1") handleAnswer("white");
+      if (e.key === "2") handleAnswer("black");
+      if (e.key === "3") handleAnswer("green");
+    }
+  });
+
+  // Inicializar EcoBot y estadísticas al cargar
+  renderAllBots("welcome");
+  updateHeaderStats();
+</script>
+</body>
+</html>
